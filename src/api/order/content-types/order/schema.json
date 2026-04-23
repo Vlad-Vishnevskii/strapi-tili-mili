@@ -1,0 +1,88 @@
+{
+  "kind": "collectionType",
+  "collectionName": "orders",
+  "info": {
+    "singularName": "order",
+    "pluralName": "orders",
+    "displayName": "Order",
+    "description": "Anonymous storefront orders"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "orderNumber": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "new",
+        "confirmed",
+        "packed",
+        "delivering",
+        "done",
+        "cancelled"
+      ],
+      "required": true,
+      "default": "new"
+    },
+    "customerName": {
+      "type": "string",
+      "required": true
+    },
+    "customerPhone": {
+      "type": "string",
+      "required": true
+    },
+    "deliveryAddress": {
+      "type": "text",
+      "required": true
+    },
+    "comment": {
+      "type": "text"
+    },
+    "totalItems": {
+      "type": "integer",
+      "required": true,
+      "min": 1
+    },
+    "totalWeight": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "totalPrice": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "amountLeftForFreeDelivery": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "source": {
+      "type": "enumeration",
+      "enum": [
+        "site"
+      ],
+      "required": true,
+      "default": "site"
+    },
+    "submittedAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "items": {
+      "type": "component",
+      "repeatable": true,
+      "required": true,
+      "component": "order.order-item",
+      "min": 1
+    }
+  }
+}

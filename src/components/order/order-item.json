@@ -1,0 +1,58 @@
+{
+  "collectionName": "components_order_order_items",
+  "info": {
+    "displayName": "Order Item",
+    "description": "Order line with product snapshot"
+  },
+  "options": {},
+  "attributes": {
+    "product": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::product.product"
+    },
+    "productName": {
+      "type": "string",
+      "required": true
+    },
+    "productSlug": {
+      "type": "string",
+      "required": true
+    },
+    "unitName": {
+      "type": "string",
+      "required": true
+    },
+    "unitPrice": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "packageWeight": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "quantity": {
+      "type": "integer",
+      "required": true,
+      "min": 1
+    },
+    "itemWeight": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "itemTotal": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "freezeLabel": {
+      "type": "string"
+    },
+    "productSnapshot": {
+      "type": "json"
+    }
+  }
+}
