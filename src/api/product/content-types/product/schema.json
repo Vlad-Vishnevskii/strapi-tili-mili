@@ -1,0 +1,72 @@
+{
+  "kind": "collectionType",
+  "collectionName": "products",
+  "info": {
+    "singularName": "product",
+    "pluralName": "products",
+    "displayName": "Product",
+    "description": "Catalog product"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "name",
+      "required": true
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "price": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "promoLabel": {
+      "type": "string"
+    },
+    "freezeLabel": {
+      "type": "string"
+    },
+    "isOutOfStock": {
+      "type": "boolean",
+      "default": false
+    },
+    "unitValue": {
+      "type": "decimal",
+      "default": 1,
+      "min": 0
+    },
+    "unitName": {
+      "type": "enumeration",
+      "enum": [
+        "кг",
+        "шт",
+        "упак"
+      ],
+      "default": "кг"
+    },
+    "descriptionItems": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.product-description-item"
+    },
+    "category": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::category.category",
+      "inversedBy": "products"
+    }
+  }
+}

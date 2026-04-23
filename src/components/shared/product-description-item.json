@@ -1,0 +1,18 @@
+{
+  "collectionName": "components_shared_product_description_items",
+  "info": {
+    "displayName": "Product Description Item",
+    "description": "Name-value pair for product details"
+  },
+  "options": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "text": {
+      "type": "text",
+      "required": true
+    }
+  }
+}

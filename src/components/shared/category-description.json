@@ -1,0 +1,14 @@
+{
+  "collectionName": "components_shared_category_descriptions",
+  "info": {
+    "displayName": "Category Description",
+    "description": "Paragraph block for category descriptions"
+  },
+  "options": {},
+  "attributes": {
+    "text": {
+      "type": "text",
+      "required": true
+    }
+  }
+}
