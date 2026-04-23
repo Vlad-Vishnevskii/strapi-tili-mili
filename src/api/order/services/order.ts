@@ -42,6 +42,9 @@ const SMTP_PORT = toFiniteNumber(process.env.SMTP_PORT, 465);
 const SMTP_SECURE = process.env.SMTP_SECURE
   ? process.env.SMTP_SECURE.toLowerCase() === 'true'
   : SMTP_PORT === 465;
+const SMTP_CONNECTION_TIMEOUT = toFiniteNumber(process.env.SMTP_CONNECTION_TIMEOUT, 5000);
+const SMTP_GREETING_TIMEOUT = toFiniteNumber(process.env.SMTP_GREETING_TIMEOUT, 5000);
+const SMTP_SOCKET_TIMEOUT = toFiniteNumber(process.env.SMTP_SOCKET_TIMEOUT, 10000);
 
 function getNotificationRecipient() {
   return process.env.ORDER_NOTIFICATIONS_TO?.trim();
@@ -172,6 +175,9 @@ async function sendNewOrderNotification(order: {
     host: process.env.SMTP_HOST,
     port: SMTP_PORT,
     secure: SMTP_SECURE,
+    connectionTimeout: SMTP_CONNECTION_TIMEOUT,
+    greetingTimeout: SMTP_GREETING_TIMEOUT,
+    socketTimeout: SMTP_SOCKET_TIMEOUT,
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
@@ -362,32 +368,30 @@ export default factories.createCoreService('api::order.order' as any, ({ strapi 
       },
     });
 
-    try {
-      await sendNewOrderNotification({
-        id: orderId,
-        orderNumber,
-        customerName: payload.customerName,
-        customerPhone: payload.customerPhone,
-        deliveryAddress: payload.deliveryAddress,
-        comment: payload.comment,
-        totalItems,
-        totalWeight: roundedTotalWeight,
-        totalPrice: roundedTotalPrice,
-        amountLeftForFreeDelivery,
-        submittedAt,
-        items: orderItems.map((item) => ({
-          productName: item.productName,
-          quantity: item.quantity,
-          packageWeight: item.packageWeight,
-          itemWeight: item.itemWeight,
-          unitPrice: item.unitPrice,
-          itemTotal: item.itemTotal,
-          unitName: item.unitName,
-        })),
-      });
-    } catch (error) {
+    void sendNewOrderNotification({
+      id: orderId,
+      orderNumber,
+      customerName: payload.customerName,
+      customerPhone: payload.customerPhone,
+      deliveryAddress: payload.deliveryAddress,
+      comment: payload.comment,
+      totalItems,
+      totalWeight: roundedTotalWeight,
+      totalPrice: roundedTotalPrice,
+      amountLeftForFreeDelivery,
+      submittedAt,
+      items: orderItems.map((item) => ({
+        productName: item.productName,
+        quantity: item.quantity,
+        packageWeight: item.packageWeight,
+        itemWeight: item.itemWeight,
+        unitPrice: item.unitPrice,
+        itemTotal: item.itemTotal,
+        unitName: item.unitName,
+      })),
+    }).catch((error) => {
       strapi.log.error(`Failed to send order notification for ${orderNumber}`, error);
-    }
+    });
 
     return {
       id: orderId,
