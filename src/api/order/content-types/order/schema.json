@@ -38,6 +38,10 @@
       "type": "string",
       "required": true
     },
+    "customerEmail": {
+      "type": "email",
+      "required": true
+    },
     "deliveryAddress": {
       "type": "text",
       "required": true

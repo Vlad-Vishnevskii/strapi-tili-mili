@@ -5,6 +5,7 @@ import nodemailer from 'nodemailer';
 type RawPayload = {
   customerName?: unknown;
   customerPhone?: unknown;
+  customerEmail?: unknown;
   deliveryAddress?: unknown;
   comment?: unknown;
   items?: unknown;
@@ -19,6 +20,7 @@ type NormalizedOrderItemInput = {
 type NormalizedOrderRequest = {
   customerName: string;
   customerPhone: string;
+  customerEmail?: string;
   deliveryAddress: string;
   comment?: string;
   items: NormalizedOrderItemInput[];
@@ -86,9 +88,26 @@ function requireNonEmptyString(value: unknown, fieldName: string) {
   return value.trim();
 }
 
+function requireEmail(value: unknown, fieldName: string) {
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new errors.ValidationError(`Field "${fieldName}" is required.`);
+  }
+
+  const normalizedValue = value.trim().toLowerCase();
+
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailPattern.test(normalizedValue)) {
+    throw new errors.ValidationError(`Field "${fieldName}" must be a valid email address.`);
+  }
+
+  return normalizedValue;
+}
+
 function normalizeOrderRequest(payload: RawPayload): NormalizedOrderRequest {
   const customerName = requireNonEmptyString(payload.customerName, 'customerName');
   const customerPhone = requireNonEmptyString(payload.customerPhone, 'customerPhone');
+  const customerEmail = requireEmail(payload.customerEmail, 'customerEmail');
   const deliveryAddress = requireNonEmptyString(payload.deliveryAddress, 'deliveryAddress');
 
   if (!Array.isArray(payload.items) || payload.items.length === 0) {
@@ -130,6 +149,7 @@ function normalizeOrderRequest(payload: RawPayload): NormalizedOrderRequest {
   return {
     customerName,
     customerPhone,
+    customerEmail,
     deliveryAddress,
     comment,
     items,
@@ -150,6 +170,7 @@ async function sendNewOrderNotification(order: {
   orderNumber: string;
   customerName: string;
   customerPhone: string;
+  customerEmail?: string;
   deliveryAddress: string;
   comment?: string;
   totalItems: number;
@@ -206,6 +227,7 @@ async function sendNewOrderNotification(order: {
     ``,
     `Клиент: ${order.customerName}`,
     `Телефон: ${order.customerPhone}`,
+    `Email: ${order.customerEmail || '-'}`,
     `Адрес: ${order.deliveryAddress}`,
     `Комментарий: ${order.comment || '-'}`,
     ``,
@@ -241,6 +263,7 @@ async function sendNewOrderNotification(order: {
     <hr />
     <p><strong>Клиент:</strong> ${order.customerName}</p>
     <p><strong>Телефон:</strong> ${order.customerPhone}</p>
+    <p><strong>Email:</strong> ${order.customerEmail || '-'}</p>
     <p><strong>Адрес:</strong> ${order.deliveryAddress}</p>
     <p><strong>Комментарий:</strong> ${order.comment || '-'}</p>
     <hr />
@@ -347,6 +370,7 @@ export default factories.createCoreService('api::order.order' as any, ({ strapi 
         status: 'new',
         customerName: payload.customerName,
         customerPhone: payload.customerPhone,
+        customerEmail: payload.customerEmail ?? null,
         deliveryAddress: payload.deliveryAddress,
         comment: payload.comment ?? null,
         totalItems,
@@ -373,6 +397,7 @@ export default factories.createCoreService('api::order.order' as any, ({ strapi 
       orderNumber,
       customerName: payload.customerName,
       customerPhone: payload.customerPhone,
+      customerEmail: payload.customerEmail,
       deliveryAddress: payload.deliveryAddress,
       comment: payload.comment,
       totalItems,
