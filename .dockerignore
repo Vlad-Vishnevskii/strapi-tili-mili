@@ -1,0 +1,14 @@
+.git
+.github
+.strapi
+.tmp
+build
+dist
+coverage
+node_modules
+npm-debug.log*
+Dockerfile*
+docker-compose*.yml
+.env
+.env.*
+!.env.example
