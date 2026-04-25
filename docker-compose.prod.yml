@@ -13,7 +13,7 @@ services:
       DATABASE_FILENAME: .tmp/data.db
       IS_PROXIED: "true"
     ports:
-      - "127.0.0.1:1337:1337"
+      - "1337:1337"
     volumes:
       - ./data/sqlite:/app/.tmp
       - ./data/uploads:/app/public/uploads
