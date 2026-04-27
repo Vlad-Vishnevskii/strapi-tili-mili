@@ -17,12 +17,10 @@
       "required": true,
       "unique": true
     },
-    "status": {
+    "orderStatus": {
       "type": "enumeration",
       "enum": [
         "new",
-        "confirmed",
-        "packed",
         "delivering",
         "done",
         "cancelled"
@@ -39,8 +37,7 @@
       "required": true
     },
     "customerEmail": {
-      "type": "email",
-      "required": true
+      "type": "email"
     },
     "deliveryAddress": {
       "type": "text",

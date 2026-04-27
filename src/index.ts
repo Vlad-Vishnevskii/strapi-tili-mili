@@ -4,6 +4,54 @@ const now = new Date();
 type UnitName = 'кг' | 'шт' | 'упак';
 type EntityId = string | number;
 
+const ORDER_STATUSES = new Set(['new', 'delivering', 'done', 'cancelled']);
+const LEGACY_ORDER_STATUS_MAP = new Map<string, string>([
+  ['confirmed', 'delivering'],
+  ['packed', 'delivering'],
+]);
+
+async function migrateOrderStatuses(strapi: Core.Strapi) {
+  const knex = strapi.db.connection;
+  const hasOrdersTable = await knex.schema.hasTable('orders');
+
+  if (!hasOrdersTable) {
+    return;
+  }
+
+  const hasLegacyStatusColumn = await knex.schema.hasColumn('orders', 'status');
+  const hasOrderStatusColumn = await knex.schema.hasColumn('orders', 'order_status');
+
+  if (!hasLegacyStatusColumn || !hasOrderStatusColumn) {
+    return;
+  }
+
+  const orders = (await knex('orders').select('id', 'status', 'order_status')) as Array<{
+    id: number;
+    status: string | null;
+    order_status: string | null;
+  }>;
+
+  for (const order of orders) {
+    if (!order.order_status && order.status) {
+      const nextStatus = ORDER_STATUSES.has(order.status)
+        ? order.status
+        : LEGACY_ORDER_STATUS_MAP.get(order.status);
+
+      if (nextStatus) {
+        await knex('orders').where({ id: order.id }).update({ order_status: nextStatus });
+      }
+    }
+
+    if (order.order_status && !ORDER_STATUSES.has(order.order_status)) {
+      const mappedOrderStatus = LEGACY_ORDER_STATUS_MAP.get(order.order_status);
+
+      if (mappedOrderStatus) {
+        await knex('orders').where({ id: order.id }).update({ order_status: mappedOrderStatus });
+      }
+    }
+  }
+}
+
 const categorySeeds = [
   {
     name: 'Птица/Мясо',
@@ -229,6 +277,8 @@ export default {
   register() {},
 
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {
+    await migrateOrderStatuses(strapi);
+
     const categoryIdBySlug = new Map<string, EntityId>();
 
     for (const category of categorySeeds) {

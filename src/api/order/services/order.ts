@@ -104,10 +104,22 @@ function requireEmail(value: unknown, fieldName: string) {
   return normalizedValue;
 }
 
+function normalizeOptionalEmail(value: unknown, fieldName: string) {
+  if (value === null || value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value !== 'string' || !value.trim()) {
+    return undefined;
+  }
+
+  return requireEmail(value, fieldName);
+}
+
 function normalizeOrderRequest(payload: RawPayload): NormalizedOrderRequest {
   const customerName = requireNonEmptyString(payload.customerName, 'customerName');
   const customerPhone = requireNonEmptyString(payload.customerPhone, 'customerPhone');
-  const customerEmail = requireEmail(payload.customerEmail, 'customerEmail');
+  const customerEmail = normalizeOptionalEmail(payload.customerEmail, 'customerEmail');
   const deliveryAddress = requireNonEmptyString(payload.deliveryAddress, 'deliveryAddress');
 
   if (!Array.isArray(payload.items) || payload.items.length === 0) {
@@ -367,7 +379,7 @@ export default factories.createCoreService('api::order.order' as any, ({ strapi 
     const createdOrder = await strapi.entityService.create('api::order.order' as any, {
       data: {
         orderNumber: provisionalOrderNumber,
-        status: 'new',
+        orderStatus: 'new',
         customerName: payload.customerName,
         customerPhone: payload.customerPhone,
         customerEmail: payload.customerEmail ?? null,

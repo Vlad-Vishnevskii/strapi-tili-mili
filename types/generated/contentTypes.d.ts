@@ -528,7 +528,7 @@ export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    customerEmail: Schema.Attribute.Email & Schema.Attribute.Required;
+    customerEmail: Schema.Attribute.Email;
     customerName: Schema.Attribute.String & Schema.Attribute.Required;
     customerPhone: Schema.Attribute.String & Schema.Attribute.Required;
     deliveryAddress: Schema.Attribute.Text & Schema.Attribute.Required;
@@ -546,15 +546,15 @@ export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
     orderNumber: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
+    orderStatus: Schema.Attribute.Enumeration<
+      ['new', 'delivering', 'done', 'cancelled']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'new'>;
     publishedAt: Schema.Attribute.DateTime;
     source: Schema.Attribute.Enumeration<['site']> &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'site'>;
-    status: Schema.Attribute.Enumeration<
-      ['new', 'confirmed', 'packed', 'delivering', 'done', 'cancelled']
-    > &
-      Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<'new'>;
     submittedAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
     totalItems: Schema.Attribute.Integer &
       Schema.Attribute.Required &
