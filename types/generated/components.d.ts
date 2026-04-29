@@ -67,6 +67,38 @@ export interface SharedCategoryDescription extends Struct.ComponentSchema {
   };
 }
 
+export interface SharedContacts extends Struct.ComponentSchema {
+  collectionName: 'components_shared_contacts';
+  info: {
+    description: 'Shared company contact information';
+    displayName: 'Contacts';
+  };
+  attributes: {
+    address: Schema.Attribute.Text;
+    email: Schema.Attribute.Email;
+    phone: Schema.Attribute.String;
+    secondaryPhone: Schema.Attribute.String;
+    workingHours: Schema.Attribute.Text;
+  };
+}
+
+export interface SharedHeroBanner extends Struct.ComponentSchema {
+  collectionName: 'components_shared_hero_banners';
+  info: {
+    description: 'Banner slide for the home page carousel';
+    displayName: 'Hero Banner';
+  };
+  attributes: {
+    buttonLink: Schema.Attribute.String;
+    buttonText: Schema.Attribute.String;
+    image: Schema.Attribute.Media<'images'> & Schema.Attribute.Required;
+    isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    mobileImage: Schema.Attribute.Media<'images'>;
+    subtitle: Schema.Attribute.Text;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
 export interface SharedProductDescriptionItem extends Struct.ComponentSchema {
   collectionName: 'components_shared_product_description_items';
   info: {
@@ -76,6 +108,43 @@ export interface SharedProductDescriptionItem extends Struct.ComponentSchema {
   attributes: {
     name: Schema.Attribute.String & Schema.Attribute.Required;
     text: Schema.Attribute.Text & Schema.Attribute.Required;
+  };
+}
+
+export interface SharedSeo extends Struct.ComponentSchema {
+  collectionName: 'components_shared_seos';
+  info: {
+    description: 'Reusable SEO metadata';
+    displayName: 'SEO';
+  };
+  attributes: {
+    canonicalUrl: Schema.Attribute.String;
+    metaDescription: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 160;
+      }>;
+    metaKeywords: Schema.Attribute.String;
+    metaTitle: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 70;
+      }>;
+    noIndex: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    ogDescription: Schema.Attribute.Text;
+    ogImage: Schema.Attribute.Media<'images'>;
+    ogTitle: Schema.Attribute.String;
+  };
+}
+
+export interface SharedSocialLink extends Struct.ComponentSchema {
+  collectionName: 'components_shared_social_links';
+  info: {
+    description: 'Link to social or messenger profile';
+    displayName: 'Social Link';
+  };
+  attributes: {
+    iconName: Schema.Attribute.String;
+    label: Schema.Attribute.String & Schema.Attribute.Required;
+    url: Schema.Attribute.String & Schema.Attribute.Required;
   };
 }
 
@@ -95,7 +164,11 @@ declare module '@strapi/strapi' {
     export interface ComponentSchemas {
       'order.order-item': OrderOrderItem;
       'shared.category-description': SharedCategoryDescription;
+      'shared.contacts': SharedContacts;
+      'shared.hero-banner': SharedHeroBanner;
       'shared.product-description-item': SharedProductDescriptionItem;
+      'shared.seo': SharedSeo;
+      'shared.social-link': SharedSocialLink;
       'shared.subcategory': SharedSubcategory;
     }
   }

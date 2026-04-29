@@ -62,6 +62,11 @@
       "repeatable": true,
       "component": "shared.product-description-item"
     },
+    "seo": {
+      "type": "component",
+      "repeatable": false,
+      "component": "shared.seo"
+    },
     "category": {
       "type": "relation",
       "relation": "manyToOne",

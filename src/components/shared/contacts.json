@@ -1,0 +1,25 @@
+{
+  "collectionName": "components_shared_contacts",
+  "info": {
+    "displayName": "Contacts",
+    "description": "Shared company contact information"
+  },
+  "options": {},
+  "attributes": {
+    "phone": {
+      "type": "string"
+    },
+    "secondaryPhone": {
+      "type": "string"
+    },
+    "email": {
+      "type": "email"
+    },
+    "address": {
+      "type": "text"
+    },
+    "workingHours": {
+      "type": "text"
+    }
+  }
+}

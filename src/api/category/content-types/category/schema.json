@@ -16,6 +16,10 @@
       "type": "string",
       "required": true
     },
+    "sortOrder": {
+      "type": "integer",
+      "default": 0
+    },
     "slug": {
       "type": "uid",
       "targetField": "name",
@@ -32,6 +36,11 @@
       "type": "component",
       "repeatable": true,
       "component": "shared.category-description"
+    },
+    "seo": {
+      "type": "component",
+      "repeatable": false,
+      "component": "shared.seo"
     },
     "subcategories": {
       "type": "component",
