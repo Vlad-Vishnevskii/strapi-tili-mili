@@ -7,6 +7,13 @@ export interface OrderOrderItem extends Struct.ComponentSchema {
     displayName: 'Order Item';
   };
   attributes: {
+    actualWeight: Schema.Attribute.Decimal &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
     freezeLabel: Schema.Attribute.String;
     itemTotal: Schema.Attribute.Decimal &
       Schema.Attribute.Required &

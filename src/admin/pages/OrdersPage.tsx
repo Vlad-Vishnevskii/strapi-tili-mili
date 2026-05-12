@@ -22,11 +22,18 @@ type OrderStatus = "new" | "delivering" | "done";
 
 type OrderItem = {
   id?: number;
+  product?: number | { id?: number; documentId?: string } | null;
   productName?: string | null;
-  quantity?: number | null;
+  productSlug?: string | null;
+  quantity?: number | string | null;
   packageWeight?: number | string | null;
   unitName?: string | null;
+  unitPrice?: number | string | null;
+  itemWeight?: number | string | null;
+  actualWeight?: number | string | null;
   itemTotal?: number | string | null;
+  freezeLabel?: string | null;
+  productSnapshot?: unknown;
 };
 
 type OrderEntry = {
@@ -39,7 +46,9 @@ type OrderEntry = {
   comment?: string | null;
   items?: OrderItem[];
   totalItems: number;
+  totalWeight: number | string;
   totalPrice: number | string;
+  amountLeftForFreeDelivery: number | string;
   submittedAt: string;
 };
 
@@ -107,14 +116,59 @@ const priceFormatter = new Intl.NumberFormat("ru-RU", {
   maximumFractionDigits: 0,
 });
 
-const formatPrice = (value: number | string) => {
-  const numericValue = typeof value === "number" ? value : Number(value);
+const weightFormatter = new Intl.NumberFormat("ru-RU", {
+  maximumFractionDigits: 3,
+});
 
-  if (Number.isNaN(numericValue)) {
+const toNumericValue = (value: unknown) => {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  if (typeof value === "string") {
+    const normalizedValue = value.trim().replace(",", ".");
+
+    if (!normalizedValue) {
+      return null;
+    }
+
+    const numericValue = Number(normalizedValue);
+
+    return Number.isFinite(numericValue) ? numericValue : null;
+  }
+
+  return null;
+};
+
+const roundDecimal = (value: number, fractionDigits = 2) =>
+  Number(value.toFixed(fractionDigits));
+
+const formatPrice = (value: number | string | null | undefined) => {
+  const numericValue = toNumericValue(value);
+
+  if (numericValue === null) {
     return String(value);
   }
 
   return priceFormatter.format(numericValue);
+};
+
+const formatWeight = (value: number | string | null | undefined) => {
+  const numericValue = toNumericValue(value);
+
+  if (numericValue === null) {
+    return "0";
+  }
+
+  return weightFormatter.format(numericValue);
+};
+
+const formatInputValue = (value: number | string | null | undefined) => {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  return typeof value === "number" ? String(value) : value;
 };
 
 const formatDate = (value: string) => {
@@ -151,6 +205,122 @@ const normalizeOrderStatus = (value: unknown): OrderStatus => {
   return "new";
 };
 
+const normalizeOrder = (order: RawOrderEntry): OrderEntry => ({
+  ...order,
+  orderStatus: normalizeOrderStatus(order.orderStatus),
+  items: order.items ?? [],
+});
+
+const getOrderedWeight = (item: OrderItem) => {
+  const packageWeight = toNumericValue(item.packageWeight) ?? 0;
+  const quantity = toNumericValue(item.quantity) ?? 0;
+
+  return roundDecimal(packageWeight * quantity, 3);
+};
+
+const getItemUnitPrice = (item: OrderItem) => {
+  const unitPrice = toNumericValue(item.unitPrice);
+
+  if (unitPrice !== null && unitPrice > 0) {
+    return unitPrice;
+  }
+
+  const itemTotal = toNumericValue(item.itemTotal);
+  const orderedWeight = getOrderedWeight(item);
+
+  if (itemTotal !== null && orderedWeight > 0) {
+    return itemTotal / orderedWeight;
+  }
+
+  return null;
+};
+
+const getActualWeightInputValue = (item: OrderItem) =>
+  formatInputValue(
+    item.actualWeight ?? item.itemWeight ?? getOrderedWeight(item),
+  );
+
+const recalculateOrder = (
+  order: OrderEntry,
+  items: OrderItem[],
+): OrderEntry => {
+  const totalItems = items.reduce(
+    (sum, item) =>
+      sum + Math.max(Math.trunc(toNumericValue(item.quantity) ?? 0), 0),
+    0,
+  );
+  const totalWeight = roundDecimal(
+    items.reduce(
+      (sum, item) =>
+        sum + (toNumericValue(item.itemWeight) ?? getOrderedWeight(item)),
+      0,
+    ),
+    3,
+  );
+  const totalPrice = roundDecimal(
+    items.reduce((sum, item) => sum + (toNumericValue(item.itemTotal) ?? 0), 0),
+  );
+  const currentAmountLeft =
+    toNumericValue(order.amountLeftForFreeDelivery) ?? 0;
+  const currentTotalPrice = toNumericValue(order.totalPrice) ?? 0;
+  const inferredFreeDeliveryThreshold =
+    currentAmountLeft > 0 ? currentTotalPrice + currentAmountLeft : 0;
+
+  return {
+    ...order,
+    items,
+    totalItems,
+    totalWeight,
+    totalPrice,
+    amountLeftForFreeDelivery:
+      inferredFreeDeliveryThreshold > 0
+        ? roundDecimal(Math.max(inferredFreeDeliveryThreshold - totalPrice, 0))
+        : currentAmountLeft,
+  };
+};
+
+const buildOrderItemsPayload = (items: OrderItem[]) =>
+  items.map((item) => {
+    const payload: Record<string, unknown> = {};
+    const numericFields = [
+      "unitPrice",
+      "packageWeight",
+      "quantity",
+      "itemWeight",
+      "actualWeight",
+      "itemTotal",
+    ] as const;
+    const stringFields = [
+      "productName",
+      "productSlug",
+      "unitName",
+      "freezeLabel",
+    ] as const;
+
+    if (item.id !== undefined) {
+      payload.id = item.id;
+    }
+
+    stringFields.forEach((fieldName) => {
+      if (item[fieldName] !== undefined) {
+        payload[fieldName] = item[fieldName] ?? null;
+      }
+    });
+
+    numericFields.forEach((fieldName) => {
+      if (item[fieldName] !== undefined) {
+        const numericValue = toNumericValue(item[fieldName]);
+        payload[fieldName] = numericValue === null ? null : numericValue;
+      }
+    });
+
+    if (item.productSnapshot !== undefined) {
+      payload.productSnapshot = item.productSnapshot;
+    }
+
+    return payload;
+  });
+
 const OrdersPage = () => {
   const { get, put } = useFetchClient();
   const { toggleNotification } = useNotification();
@@ -164,6 +334,9 @@ const OrdersPage = () => {
   const [savingDocumentId, setSavingDocumentId] = React.useState<string | null>(
     null,
   );
+  const [savingWeightKey, setSavingWeightKey] = React.useState<string | null>(
+    null,
+  );
   const [expandedDocumentIds, setExpandedDocumentIds] = React.useState<
     string[]
   >([]);
@@ -175,10 +348,7 @@ const OrdersPage = () => {
     try {
       const response = await get<OrdersResponse>(ORDERS_ENDPOINT);
       const nextOrders = Array.isArray(response.data?.results)
-        ? response.data.results.map((order) => ({
-            ...order,
-            orderStatus: normalizeOrderStatus(order.orderStatus),
-          }))
+        ? response.data.results.map(normalizeOrder)
         : [];
 
       setOrders(nextOrders);
@@ -251,6 +421,119 @@ const OrdersPage = () => {
       }
     },
     [orders, put, toggleNotification],
+  );
+
+  const handleActualWeightInputChange = React.useCallback(
+    (documentId: string, itemIndex: number, value: string) => {
+      setOrders((currentOrders) =>
+        currentOrders.map((order) =>
+          order.documentId === documentId
+            ? {
+                ...order,
+                items: (order.items ?? []).map((item, index) =>
+                  index === itemIndex ? { ...item, actualWeight: value } : item,
+                ),
+              }
+            : order,
+        ),
+      );
+    },
+    [],
+  );
+
+  const handleActualWeightSave = React.useCallback(
+    async (documentId: string, itemIndex: number) => {
+      const currentOrder = orders.find(
+        (order) => order.documentId === documentId,
+      );
+      const currentItem = currentOrder?.items?.[itemIndex];
+
+      if (!currentOrder || !currentItem || !currentOrder.items) {
+        return;
+      }
+
+      const weightKey = `${documentId}-${currentItem.id ?? itemIndex}`;
+
+      if (savingWeightKey === weightKey) {
+        return;
+      }
+
+      const actualWeight = toNumericValue(
+        currentItem.actualWeight ?? currentItem.itemWeight,
+      );
+
+      if (actualWeight === null || actualWeight <= 0) {
+        toggleNotification({
+          type: "danger",
+          message: "Введите фактический вес больше 0.",
+        });
+        return;
+      }
+
+      const unitPrice = getItemUnitPrice(currentItem);
+
+      if (unitPrice === null || unitPrice <= 0) {
+        toggleNotification({
+          type: "danger",
+          message: "Не удалось рассчитать цену позиции.",
+        });
+        return;
+      }
+
+      const nextItems = currentOrder.items.map((item, index) =>
+        index === itemIndex
+          ? {
+              ...item,
+              unitPrice: roundDecimal(unitPrice),
+              actualWeight: roundDecimal(actualWeight, 3),
+              itemWeight: roundDecimal(actualWeight, 3),
+              itemTotal: roundDecimal(unitPrice * actualWeight),
+            }
+          : item,
+      );
+      const nextOrder = recalculateOrder(currentOrder, nextItems);
+
+      setSavingWeightKey(weightKey);
+      setOrders((currentOrders) =>
+        currentOrders.map((order) =>
+          order.documentId === documentId ? nextOrder : order,
+        ),
+      );
+
+      try {
+        await put(
+          `/content-manager/collection-types/api::order.order/${documentId}`,
+          {
+            items: buildOrderItemsPayload(nextItems),
+            totalItems: nextOrder.totalItems,
+            totalWeight: nextOrder.totalWeight,
+            totalPrice: nextOrder.totalPrice,
+            amountLeftForFreeDelivery: nextOrder.amountLeftForFreeDelivery,
+          },
+        );
+
+        toggleNotification({
+          type: "success",
+          message: `Вес и сумма заказа ${currentOrder.orderNumber} обновлены.`,
+        });
+      } catch {
+        setOrders((currentOrders) =>
+          currentOrders.map((order) =>
+            order.documentId === documentId ? currentOrder : order,
+          ),
+        );
+
+        toggleNotification({
+          type: "danger",
+          message: "Не удалось сохранить фактический вес.",
+        });
+      } finally {
+        setSavingWeightKey((currentKey) =>
+          currentKey === weightKey ? null : currentKey,
+        );
+      }
+    },
+    [orders, put, savingWeightKey, toggleNotification],
   );
 
   const toggleExpandedOrder = React.useCallback((documentId: string) => {
@@ -553,46 +836,114 @@ const OrdersPage = () => {
                                   paddingTop={3}
                                 >
                                   {order.items && order.items.length > 0 ? (
-                                    order.items.map((item, index) => (
-                                      <Box
-                                        key={
-                                          item.id ??
-                                          `${order.documentId}-${index}`
-                                        }
-                                        background="neutral100"
-                                        hasRadius
-                                        padding={3}
-                                      >
-                                        <Flex
-                                          justifyContent="space-between"
-                                          alignItems="flex-start"
-                                          gap={3}
-                                          wrap="wrap"
+                                    order.items.map((item, index) => {
+                                      const orderedWeight =
+                                        getOrderedWeight(item);
+                                      const unitPrice = getItemUnitPrice(item);
+                                      const weightKey = `${order.documentId}-${
+                                        item.id ?? index
+                                      }`;
+                                      const isWeightSaving =
+                                        savingWeightKey === weightKey;
+
+                                      return (
+                                        <Box
+                                          key={
+                                            item.id ??
+                                            `${order.documentId}-${index}`
+                                          }
+                                          background="neutral100"
+                                          hasRadius
+                                          padding={3}
                                         >
-                                          <Box>
-                                            <Typography textColor="neutral800">
-                                              {item.productName ||
-                                                `Позиция ${index + 1}`}
-                                            </Typography>
-                                            <Typography
-                                              variant="pi"
-                                              textColor="neutral600"
-                                            >
-                                              {" "}
-                                              {item.quantity ?? 0} шт. •{" "}
-                                              {item.packageWeight ?? 0}{" "}
-                                              {item.unitName ?? ""}
-                                            </Typography>
-                                          </Box>
-                                          <Typography
-                                            fontWeight="bold"
-                                            textColor="neutral800"
+                                          <Flex
+                                            justifyContent="space-between"
+                                            alignItems="flex-start"
+                                            gap={4}
+                                            wrap="wrap"
                                           >
-                                            {formatPrice(item.itemTotal ?? 0)}
-                                          </Typography>
-                                        </Flex>
-                                      </Box>
-                                    ))
+                                            <Box>
+                                              <Typography textColor="neutral800">
+                                                {item.productName ||
+                                                  `Позиция ${index + 1}`}
+                                              </Typography>
+                                              <Typography
+                                                variant="pi"
+                                                textColor="neutral600"
+                                              >
+                                                • {item.quantity ?? 0} шт. •{" "}
+                                                {item.packageWeight ?? 0}{" "}
+                                                {item.unitName ?? ""} • всего{" "}
+                                                {formatWeight(orderedWeight)}{" "}
+                                                {item.unitName ?? ""}
+                                              </Typography>
+                                              <Typography
+                                                variant="pi"
+                                                textColor="neutral600"
+                                              >
+                                                {formatPrice(unitPrice ?? 0)} за{" "}
+                                                1 {item.unitName ?? "ед."}
+                                              </Typography>
+                                            </Box>
+
+                                            <Flex
+                                              gap={3}
+                                              alignItems="flex-start"
+                                              wrap="wrap"
+                                            >
+                                              <Box width="160px">
+                                                <TextInput
+                                                  aria-label={`Фактический вес позиции ${item.productName || index + 1}`}
+                                                  label="Факт. вес"
+                                                  name={`actualWeight-${weightKey}`}
+                                                  inputMode="decimal"
+                                                  value={getActualWeightInputValue(
+                                                    item,
+                                                  )}
+                                                  disabled={isWeightSaving}
+                                                  onChange={(
+                                                    event: React.ChangeEvent<HTMLInputElement>,
+                                                  ) =>
+                                                    handleActualWeightInputChange(
+                                                      order.documentId,
+                                                      index,
+                                                      event.target.value,
+                                                    )
+                                                  }
+                                                  onBlur={() =>
+                                                    void handleActualWeightSave(
+                                                      order.documentId,
+                                                      index,
+                                                    )
+                                                  }
+                                                  onKeyDown={(
+                                                    event: React.KeyboardEvent<HTMLInputElement>,
+                                                  ) => {
+                                                    if (event.key === "Enter") {
+                                                      event.currentTarget.blur();
+                                                    }
+                                                  }}
+                                                />
+                                              </Box>
+
+                                              <Box
+                                                minWidth="120px"
+                                                paddingTop={6}
+                                              >
+                                                <Typography
+                                                  fontWeight="bold"
+                                                  textColor="neutral800"
+                                                >
+                                                  {formatPrice(
+                                                    item.itemTotal ?? 0,
+                                                  )}
+                                                </Typography>
+                                              </Box>
+                                            </Flex>
+                                          </Flex>
+                                        </Box>
+                                      );
+                                    })
                                   ) : (
                                     <Typography textColor="neutral600">
                                       Позиции заказа не найдены.

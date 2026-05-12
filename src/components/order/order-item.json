@@ -43,6 +43,10 @@
       "required": true,
       "min": 0
     },
+    "actualWeight": {
+      "type": "decimal",
+      "min": 0
+    },
     "itemTotal": {
       "type": "decimal",
       "required": true,

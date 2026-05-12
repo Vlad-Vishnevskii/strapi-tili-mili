@@ -39,6 +39,9 @@
     "freezeLabel": {
       "type": "string"
     },
+    "dietLabel": {
+      "type": "string"
+    },
     "isOutOfStock": {
       "type": "boolean",
       "default": false

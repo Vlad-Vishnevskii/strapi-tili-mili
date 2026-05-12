@@ -641,6 +641,7 @@ export interface ApiProductProduct extends Struct.CollectionTypeSchema {
       'shared.product-description-item',
       true
     >;
+    dietLabel: Schema.Attribute.String;
     freezeLabel: Schema.Attribute.String;
     image: Schema.Attribute.Media<'images'>;
     isOutOfStock: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
@@ -698,6 +699,8 @@ export interface ApiSiteSettingSiteSetting extends Struct.SingleTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     defaultSeo: Schema.Attribute.Component<'shared.seo', false>;
+    deliveryDateMsk: Schema.Attribute.Date;
+    deliveryDateSpb: Schema.Attribute.Date;
     favicon: Schema.Attribute.Media<'images'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<

@@ -35,6 +35,7 @@ type ProductRecord = {
   unitName: string;
   unitValue?: number | string | null;
   freezeLabel?: string | null;
+  dietLabel?: string | null;
   promoLabel?: string | null;
   isOutOfStock?: boolean | null;
 };
@@ -312,7 +313,7 @@ export default factories.createCoreService('api::order.order' as any, ({ strapi 
           $notNull: true,
         },
       },
-      select: ['id', 'documentId', 'name', 'slug', 'price', 'unitName', 'unitValue', 'freezeLabel', 'promoLabel', 'isOutOfStock'],
+      select: ['id', 'documentId', 'name', 'slug', 'price', 'unitName', 'unitValue', 'freezeLabel', 'dietLabel', 'promoLabel', 'isOutOfStock'],
     })) as ProductRecord[];
 
     const productById = new Map(products.map((product) => [Number(product.id), product]));
@@ -361,6 +362,7 @@ export default factories.createCoreService('api::order.order' as any, ({ strapi 
           unitName: product.unitName,
           unitValue: roundDecimal(toFiniteNumber(product.unitValue, 1), 3),
           freezeLabel: product.freezeLabel ?? null,
+          dietLabel: product.dietLabel ?? null,
           promoLabel: product.promoLabel ?? null,
           isOutOfStock: Boolean(product.isOutOfStock),
           capturedAt: submittedAt.toISOString(),

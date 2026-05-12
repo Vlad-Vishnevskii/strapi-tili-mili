@@ -40,6 +40,12 @@
       "repeatable": true,
       "component": "shared.social-link"
     },
+    "deliveryDateSpb": {
+      "type": "date"
+    },
+    "deliveryDateMsk": {
+      "type": "date"
+    },
     "promoText": {
       "type": "text"
     }
