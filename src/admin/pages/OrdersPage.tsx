@@ -862,28 +862,40 @@ const OrdersPage = () => {
                                             gap={4}
                                             wrap="wrap"
                                           >
-                                            <Box>
-                                              <Typography textColor="neutral800">
-                                                {item.productName ||
-                                                  `Позиция ${index + 1}`}
-                                              </Typography>
-                                              <Typography
-                                                variant="pi"
-                                                textColor="neutral600"
+                                            <Box minWidth="280px">
+                                              <Flex
+                                                direction="column"
+                                                alignItems="flex-start"
+                                                gap={1}
                                               >
-                                                • {item.quantity ?? 0} шт. •{" "}
-                                                {item.packageWeight ?? 0}{" "}
-                                                {item.unitName ?? ""} • всего{" "}
-                                                {formatWeight(orderedWeight)}{" "}
-                                                {item.unitName ?? ""}
-                                              </Typography>
-                                              <Typography
-                                                variant="pi"
-                                                textColor="neutral600"
-                                              >
-                                                {formatPrice(unitPrice ?? 0)} за{" "}
-                                                1 {item.unitName ?? "ед."}
-                                              </Typography>
+                                                <Typography
+                                                  fontWeight="bold"
+                                                  textColor="neutral800"
+                                                >
+                                                  {item.productName ||
+                                                    `Позиция ${index + 1}`}
+                                                </Typography>
+                                                <Typography
+                                                  variant="pi"
+                                                  textColor="neutral600"
+                                                >
+                                                  {item.quantity ?? 0} шт. •{" "}
+                                                  {formatWeight(
+                                                    item.packageWeight,
+                                                  )}{" "}
+                                                  {item.unitName ?? ""} • всего{" "}
+                                                  {formatWeight(orderedWeight)}{" "}
+                                                  {item.unitName ?? ""}
+                                                </Typography>
+                                                <Typography
+                                                  variant="pi"
+                                                  textColor="neutral600"
+                                                >
+                                                  {formatPrice(unitPrice ?? 0)}{" "}
+                                                  за 1{" "}
+                                                  {item.unitName ?? "ед."}
+                                                </Typography>
+                                              </Flex>
                                             </Box>
 
                                             <Flex
