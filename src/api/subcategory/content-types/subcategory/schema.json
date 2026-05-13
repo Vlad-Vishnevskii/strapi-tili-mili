@@ -1,11 +1,11 @@
 {
   "kind": "collectionType",
-  "collectionName": "categories",
+  "collectionName": "subcategories",
   "info": {
-    "singularName": "category",
-    "pluralName": "categories",
-    "displayName": "Category",
-    "description": "Catalog category"
+    "singularName": "subcategory",
+    "pluralName": "subcategories",
+    "displayName": "Subcategory",
+    "description": "Catalog subcategory with a parent category and its own page"
   },
   "options": {
     "draftAndPublish": true
@@ -42,17 +42,17 @@
       "repeatable": false,
       "component": "shared.seo"
     },
-    "subcategories": {
+    "category": {
       "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::subcategory.subcategory",
-      "mappedBy": "category"
+      "relation": "manyToOne",
+      "target": "api::category.category",
+      "inversedBy": "subcategories"
     },
     "products": {
       "type": "relation",
       "relation": "oneToMany",
       "target": "api::product.product",
-      "mappedBy": "category"
+      "mappedBy": "subcategory"
     }
   }
 }

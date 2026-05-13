@@ -64,7 +64,11 @@ const categorySeeds = [
         text: 'Здесь удобно выбрать как базовые продукты для супов, запекания и жарки, так и более выразительные позиции для семейного стола. Категория подходит тем, кто ищет свежее мясо и птицу с понятным происхождением и бережной упаковкой.',
       },
     ],
-    subcategories: [{ label: 'Филе' }, { label: 'Бедро' }, { label: 'Для бульона' }],
+    subcategories: [
+      { name: 'Филе', slug: 'ptica-myaso-file' },
+      { name: 'Бедро', slug: 'ptica-myaso-bedro' },
+      { name: 'Для бульона', slug: 'ptica-myaso-dlya-bulona' },
+    ],
   },
   {
     name: 'Полуфабрикаты',
@@ -77,7 +81,11 @@ const categorySeeds = [
         text: 'Мы сохраняем понятный состав, аккуратную фасовку и домашний подход к продукту, чтобы полуфабрикаты оставались не просто удобными, но и вкусными.',
       },
     ],
-    subcategories: [{ label: 'Котлеты' }, { label: 'Пельмени' }, { label: 'Фарш' }],
+    subcategories: [
+      { name: 'Котлеты', slug: 'polufabrikaty-kotlety' },
+      { name: 'Пельмени', slug: 'polufabrikaty-pelmeni' },
+      { name: 'Фарш', slug: 'polufabrikaty-farsh' },
+    ],
   },
   {
     name: 'Маринады',
@@ -90,7 +98,11 @@ const categorySeeds = [
         text: 'Подобрали варианты для домашнего ужина, сезонных посиделок и выходных на природе, чтобы в каждом продукте сохранялись сочность, аромат и аккуратная текстура.',
       },
     ],
-    subcategories: [{ label: 'Для курицы' }, { label: 'Для мяса' }, { label: 'Для гриля' }],
+    subcategories: [
+      { name: 'Для курицы', slug: 'marinady-dlya-kuricy' },
+      { name: 'Для мяса', slug: 'marinady-dlya-myasa' },
+      { name: 'Для гриля', slug: 'marinady-dlya-grilya' },
+    ],
   },
   {
     name: 'Мясные деликатесы',
@@ -103,7 +115,11 @@ const categorySeeds = [
         text: 'Раздел удобно использовать и для повседневных бутербродов, и для составления гастрономических наборов к столу. Мы сохраняем акцент на качестве сырья и аккуратной подготовке.',
       },
     ],
-    subcategories: [{ label: 'Колбасы' }, { label: 'Рулеты' }, { label: 'Нарезка' }],
+    subcategories: [
+      { name: 'Колбасы', slug: 'myasnye-delikatesy-kolbasy' },
+      { name: 'Рулеты', slug: 'myasnye-delikatesy-rulety' },
+      { name: 'Нарезка', slug: 'myasnye-delikatesy-narezka' },
+    ],
   },
   {
     name: 'Молочная продукция, яйца',
@@ -116,7 +132,11 @@ const categorySeeds = [
         text: 'Такие продукты удобно брать для завтраков, выпечки, домашнего меню и запаса на несколько дней. Здесь важны свежесть, аккуратная доставка и понятный вкус без лишнего.',
       },
     ],
-    subcategories: [{ label: 'Яйца' }, { label: 'Молоко' }, { label: 'Сметана' }],
+    subcategories: [
+      { name: 'Яйца', slug: 'molochnaya-produkciya-yajca-yajca' },
+      { name: 'Молоко', slug: 'molochnaya-produkciya-yajca-moloko' },
+      { name: 'Сметана', slug: 'molochnaya-produkciya-yajca-smetana' },
+    ],
   },
   {
     name: 'Сыры',
@@ -129,7 +149,11 @@ const categorySeeds = [
         text: 'Они подходят для завтраков, пасты, закусок, салатов и красивых сырных тарелок. Важно, чтобы каждый продукт сохранял свежесть, аромат и удобный формат хранения.',
       },
     ],
-    subcategories: [{ label: 'Мягкие' }, { label: 'Твердые' }, { label: 'Выдержанные' }],
+    subcategories: [
+      { name: 'Мягкие', slug: 'syry-myagkie' },
+      { name: 'Твердые', slug: 'syry-tverdye' },
+      { name: 'Выдержанные', slug: 'syry-vyderzhannye' },
+    ],
   },
   {
     name: 'Подарочные наборы',
@@ -142,7 +166,11 @@ const categorySeeds = [
         text: 'Мы делаем акцент на сочетании вкуса, аккуратной упаковки и цельного впечатления, чтобы набор выглядел продуманно и радовал не только содержимым, но и подачей.',
       },
     ],
-    subcategories: [{ label: 'Праздничные' }, { label: 'Семейные' }, { label: 'Корпоративные' }],
+    subcategories: [
+      { name: 'Праздничные', slug: 'podarochnye-nabory-prazdnichnye' },
+      { name: 'Семейные', slug: 'podarochnye-nabory-semejnye' },
+      { name: 'Корпоративные', slug: 'podarochnye-nabory-korporativnye' },
+    ],
   },
   {
     name: 'Консервация',
@@ -155,7 +183,11 @@ const categorySeeds = [
         text: 'Мы сохраняем упор на понятный состав, аккуратную фасовку и удобство использования, чтобы консервация оставалась практичной и действительно вкусной.',
       },
     ],
-    subcategories: [{ label: 'Тушенка' }, { label: 'Паштеты' }, { label: 'Готовые блюда' }],
+    subcategories: [
+      { name: 'Тушенка', slug: 'konservaciya-tushenka' },
+      { name: 'Паштеты', slug: 'konservaciya-pashtety' },
+      { name: 'Готовые блюда', slug: 'konservaciya-gotovye-blyuda' },
+    ],
   },
 ];
 
@@ -171,6 +203,7 @@ const productSeeds = [
     unitValue: 1,
     unitName: 'кг' as UnitName,
     categorySlug: 'ptica-myaso',
+    subcategorySlug: 'ptica-myaso-file',
     descriptionItems: [
       { name: 'Цена:', text: 'Товар весовой, конечная стоимость будет рассчитана в соответствии с его весом.' },
       { name: 'Вес:', text: '1 кг. (0.5-1.5 кг.)' },
@@ -186,6 +219,7 @@ const productSeeds = [
     unitValue: 1,
     unitName: 'кг' as UnitName,
     categorySlug: 'ptica-myaso',
+    subcategorySlug: 'ptica-myaso-bedro',
     descriptionItems: [
       { name: 'Цена:', text: 'Товар весовой, конечная стоимость будет рассчитана в соответствии с его весом.' },
       { name: 'Вес:', text: '1 кг. (0.5-1.5 кг.)' },
@@ -200,6 +234,7 @@ const productSeeds = [
     unitValue: 1,
     unitName: 'упак' as UnitName,
     categorySlug: 'polufabrikaty',
+    subcategorySlug: 'polufabrikaty-kotlety',
     descriptionItems: [
       { name: 'Формат:', text: 'Быстрая заготовка для будничного ужина.' },
       { name: 'Вес:', text: '800 г.' },
@@ -214,6 +249,7 @@ const productSeeds = [
     unitValue: 1,
     unitName: 'шт' as UnitName,
     categorySlug: 'marinady',
+    subcategorySlug: 'marinady-dlya-kuricy',
     descriptionItems: [
       { name: 'Назначение:', text: 'Подходит для духовки, гриля и сковороды.' },
       { name: 'Объем:', text: '350 мл.' },
@@ -227,6 +263,7 @@ const productSeeds = [
     unitValue: 1,
     unitName: 'кг' as UnitName,
     categorySlug: 'myasnye-delikatesy',
+    subcategorySlug: 'myasnye-delikatesy-rulety',
     descriptionItems: [
       { name: 'Подача:', text: 'Подходит для нарезки и праздничного стола.' },
       { name: 'Вкус:', text: 'Насыщенный, с легкой копченой ноткой.' },
@@ -240,6 +277,7 @@ const productSeeds = [
     unitValue: 10,
     unitName: 'шт' as UnitName,
     categorySlug: 'molochnaya-produkciya-yajca',
+    subcategorySlug: 'molochnaya-produkciya-yajca-yajca',
     descriptionItems: [
       { name: 'Категория:', text: 'Отборные.' },
       { name: 'Количество:', text: '10 шт.' },
@@ -253,6 +291,7 @@ const productSeeds = [
     unitValue: 1,
     unitName: 'кг' as UnitName,
     categorySlug: 'syry',
+    subcategorySlug: 'syry-vyderzhannye',
     descriptionItems: [
       { name: 'Текстура:', text: 'Плотная, с выраженным сливочным вкусом.' },
       { name: 'Выдержка:', text: '6 месяцев.' },
@@ -266,6 +305,7 @@ const productSeeds = [
     unitValue: 1,
     unitName: 'шт' as UnitName,
     categorySlug: 'konservaciya',
+    subcategorySlug: 'konservaciya-tushenka',
     descriptionItems: [
       { name: 'Формат:', text: 'Стеклянная банка.' },
       { name: 'Вес:', text: '500 г.' },
@@ -281,8 +321,10 @@ export default {
     await migrateOrderStatuses(strapi);
 
     const categoryIdBySlug = new Map<string, EntityId>();
+    const subcategoryIdBySlug = new Map<string, EntityId>();
 
     for (const category of categorySeeds) {
+      const { subcategories, ...categoryData } = category;
       const existingCategories = await strapi.entityService.findMany('api::category.category', {
         filters: { slug: category.slug },
         publicationState: 'preview',
@@ -298,7 +340,7 @@ export default {
 
       const createdCategory = await strapi.entityService.create('api::category.category', {
         data: {
-          ...category,
+          ...categoryData,
           publishedAt: now,
         },
       });
@@ -306,8 +348,60 @@ export default {
       categoryIdBySlug.set(category.slug, createdCategory.id);
     }
 
+    for (const category of categorySeeds) {
+      const categoryId = categoryIdBySlug.get(category.slug);
+
+      if (!categoryId) {
+        continue;
+      }
+
+      for (const [index, subcategory] of category.subcategories.entries()) {
+        const existingSubcategories = await strapi.entityService.findMany('api::subcategory.subcategory', {
+          filters: { slug: subcategory.slug },
+          publicationState: 'preview',
+          populate: ['category'],
+          limit: 1,
+        });
+
+        const existingSubcategory = (Array.isArray(existingSubcategories) ? existingSubcategories[0] : null) as
+          | ({ id: EntityId; category?: { id?: EntityId } | EntityId | null })
+          | null;
+
+        if (existingSubcategory) {
+          const existingCategoryId =
+            typeof existingSubcategory.category === 'object' && existingSubcategory.category !== null
+              ? existingSubcategory.category.id
+              : existingSubcategory.category;
+
+          if (existingCategoryId !== categoryId) {
+            await strapi.entityService.update('api::subcategory.subcategory', existingSubcategory.id, {
+              data: {
+                category: categoryId,
+              },
+            });
+          }
+
+          subcategoryIdBySlug.set(subcategory.slug, existingSubcategory.id);
+          continue;
+        }
+
+        const createdSubcategory = await strapi.entityService.create('api::subcategory.subcategory', {
+          data: {
+            name: subcategory.name,
+            slug: subcategory.slug,
+            sortOrder: index + 1,
+            category: categoryId,
+            publishedAt: now,
+          },
+        });
+
+        subcategoryIdBySlug.set(subcategory.slug, createdSubcategory.id);
+      }
+    }
+
     for (const product of productSeeds) {
       const categoryId = categoryIdBySlug.get(product.categorySlug);
+      const subcategoryId = subcategoryIdBySlug.get(product.subcategorySlug);
 
       if (!categoryId) {
         continue;
@@ -316,12 +410,16 @@ export default {
       const existingProducts = await strapi.entityService.findMany('api::product.product', {
         filters: { slug: product.slug },
         publicationState: 'preview',
-        populate: ['category'],
+        populate: ['category', 'subcategory'],
         limit: 1,
       });
 
       const existingProduct = (Array.isArray(existingProducts) ? existingProducts[0] : null) as
-        | ({ id: EntityId; category?: { id?: EntityId } | EntityId | null })
+        | ({
+            id: EntityId;
+            category?: { id?: EntityId } | EntityId | null;
+            subcategory?: { id?: EntityId } | EntityId | null;
+          })
         | null;
 
       if (existingProduct) {
@@ -329,11 +427,16 @@ export default {
           typeof existingProduct.category === 'object' && existingProduct.category !== null
             ? existingProduct.category.id
             : existingProduct.category;
+        const existingSubcategoryId =
+          typeof existingProduct.subcategory === 'object' && existingProduct.subcategory !== null
+            ? existingProduct.subcategory.id
+            : existingProduct.subcategory;
 
-        if (existingCategoryId !== categoryId) {
+        if (existingCategoryId !== categoryId || existingSubcategoryId !== subcategoryId) {
           await strapi.entityService.update('api::product.product', existingProduct.id, {
             data: {
               category: categoryId,
+              subcategory: subcategoryId,
             },
           });
         }
@@ -354,6 +457,7 @@ export default {
           unitName: product.unitName,
           descriptionItems: product.descriptionItems,
           category: categoryId,
+          subcategory: subcategoryId,
           publishedAt: now,
         },
       });

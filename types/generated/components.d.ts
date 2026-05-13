@@ -155,17 +155,6 @@ export interface SharedSocialLink extends Struct.ComponentSchema {
   };
 }
 
-export interface SharedSubcategory extends Struct.ComponentSchema {
-  collectionName: 'components_shared_subcategories';
-  info: {
-    description: 'Simple subcategory label';
-    displayName: 'Subcategory';
-  };
-  attributes: {
-    label: Schema.Attribute.String & Schema.Attribute.Required;
-  };
-}
-
 declare module '@strapi/strapi' {
   export module Public {
     export interface ComponentSchemas {
@@ -176,7 +165,6 @@ declare module '@strapi/strapi' {
       'shared.product-description-item': SharedProductDescriptionItem;
       'shared.seo': SharedSeo;
       'shared.social-link': SharedSocialLink;
-      'shared.subcategory': SharedSubcategory;
     }
   }
 }
