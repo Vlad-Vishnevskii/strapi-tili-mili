@@ -2,6 +2,7 @@ import * as React from "react";
 import { Page, useFetchClient, useNotification } from "@strapi/strapi/admin";
 import {
   Box,
+  Button,
   Flex,
   Link,
   Loader,
@@ -16,6 +17,7 @@ import {
   Tr,
   Typography,
 } from "@strapi/design-system";
+import { File as FileIcon } from "@strapi/icons";
 import { Link as RouterLink } from "react-router-dom";
 
 type OrderStatus = "new" | "delivering" | "done";
@@ -43,6 +45,8 @@ type OrderEntry = {
   orderStatus: OrderStatus;
   customerName: string;
   customerPhone: string;
+  customerEmail?: string | null;
+  deliveryAddress?: string | null;
   comment?: string | null;
   items?: OrderItem[];
   totalItems: number;
@@ -187,6 +191,295 @@ const formatComment = (value: string | null | undefined) => {
   }
 
   return value.trim();
+};
+
+const escapeHtml = (value: unknown) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+const getPrintableItemWeight = (item: OrderItem) =>
+  toNumericValue(item.actualWeight ?? item.itemWeight) ?? getOrderedWeight(item);
+
+const buildInvoiceHtml = (order: OrderEntry) => {
+  const items = order.items ?? [];
+  const rows = items
+    .map((item, index) => {
+      const quantity = toNumericValue(item.quantity) ?? 0;
+      const packageWeight = toNumericValue(item.packageWeight) ?? 0;
+      const actualWeight = getPrintableItemWeight(item);
+      const unitPrice = getItemUnitPrice(item);
+
+      return `
+        <tr>
+          <td class="cell muted">${index + 1}</td>
+          <td class="cell name">${escapeHtml(item.productName || `Позиция ${index + 1}`)}</td>
+          <td class="cell">${escapeHtml(item.freezeLabel || "")}</td>
+          <td class="cell numeric">${escapeHtml(quantity)}</td>
+          <td class="cell numeric">${escapeHtml(formatWeight(packageWeight))} ${escapeHtml(item.unitName ?? "")}</td>
+          <td class="cell numeric">${escapeHtml(formatWeight(actualWeight))} ${escapeHtml(item.unitName ?? "")}</td>
+          <td class="cell numeric">${escapeHtml(formatPrice(unitPrice ?? 0))}</td>
+          <td class="cell numeric total">${escapeHtml(formatPrice(item.itemTotal ?? 0))}</td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  return `<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <title>Накладная ${escapeHtml(order.orderNumber)}</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 14mm;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        color: #1f2933;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      .page {
+        width: 100%;
+      }
+
+      .header {
+        align-items: flex-start;
+        border-bottom: 2px solid #1f2933;
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        padding-bottom: 16px;
+      }
+
+      h1 {
+        font-size: 26px;
+        line-height: 1.1;
+        margin: 0 0 8px;
+      }
+
+      .meta {
+        color: #5c6670;
+        font-size: 12px;
+      }
+
+      .order-number {
+        font-size: 18px;
+        font-weight: 700;
+        text-align: right;
+      }
+
+      .section {
+        margin-top: 18px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 8px 24px;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .label {
+        color: #6b7280;
+        font-size: 10px;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+      }
+
+      .value {
+        font-size: 13px;
+        font-weight: 600;
+        margin-top: 2px;
+      }
+
+      table {
+        border-collapse: collapse;
+        margin-top: 10px;
+        width: 100%;
+      }
+
+      th {
+        background: #f3f4f6;
+        border: 1px solid #d1d5db;
+        color: #374151;
+        font-size: 10px;
+        padding: 8px 6px;
+        text-align: left;
+        text-transform: uppercase;
+      }
+
+      .cell {
+        border: 1px solid #d1d5db;
+        padding: 8px 6px;
+        vertical-align: top;
+      }
+
+      .name {
+        font-weight: 600;
+        width: 30%;
+      }
+
+      .numeric {
+        text-align: right;
+        white-space: nowrap;
+      }
+
+      .muted {
+        color: #6b7280;
+      }
+
+      .total {
+        font-weight: 700;
+      }
+
+      .summary {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 12px;
+      }
+
+      .summary-table {
+        margin: 0;
+        width: 280px;
+      }
+
+      .summary-table td {
+        border: 1px solid #d1d5db;
+        padding: 8px;
+      }
+
+      .summary-table td:last-child {
+        font-weight: 700;
+        text-align: right;
+      }
+
+      .comment {
+        border: 1px solid #d1d5db;
+        margin-top: 10px;
+        min-height: 44px;
+        padding: 10px;
+        white-space: pre-wrap;
+      }
+
+      .signatures {
+        display: grid;
+        gap: 32px;
+        grid-template-columns: 1fr 1fr;
+        margin-top: 44px;
+      }
+
+      .signature-line {
+        border-top: 1px solid #1f2933;
+        padding-top: 8px;
+      }
+
+      @media print {
+        body {
+          print-color-adjust: exact;
+          -webkit-print-color-adjust: exact;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="header">
+        <div>
+          <h1>Накладная</h1>
+          <div class="meta">Для комплектации и вложения в заказ</div>
+        </div>
+        <div>
+          <div class="order-number">${escapeHtml(order.orderNumber)}</div>
+          <div class="meta">${escapeHtml(formatDate(order.submittedAt))}</div>
+        </div>
+      </header>
+
+      <section class="section grid">
+        <div>
+          <div class="label">Получатель</div>
+          <div class="value">${escapeHtml(order.customerName)}</div>
+        </div>
+        <div>
+          <div class="label">Телефон</div>
+          <div class="value">${escapeHtml(order.customerPhone)}</div>
+        </div>
+        <div>
+          <div class="label">Email</div>
+          <div class="value">${escapeHtml(formatComment(order.customerEmail))}</div>
+        </div>
+        <div>
+          <div class="label">Адрес доставки</div>
+          <div class="value">${escapeHtml(formatComment(order.deliveryAddress))}</div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="label">Состав заказа</div>
+        <table>
+          <thead>
+            <tr>
+              <th>№</th>
+              <th>Товар</th>
+              <th>Заморозка</th>
+              <th>Кол-во</th>
+              <th>Фасовка</th>
+              <th>Факт. вес</th>
+              <th>Цена</th>
+              <th>Сумма</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              rows ||
+              `<tr><td class="cell" colspan="8">Позиции заказа не найдены.</td></tr>`
+            }
+          </tbody>
+        </table>
+      </section>
+
+      <div class="summary">
+        <table class="summary-table">
+          <tbody>
+            <tr>
+              <td>Позиций</td>
+              <td>${escapeHtml(order.totalItems)}</td>
+            </tr>
+            <tr>
+              <td>Общий вес</td>
+              <td>${escapeHtml(formatWeight(order.totalWeight))}</td>
+            </tr>
+            <tr>
+              <td>Итого</td>
+              <td>${escapeHtml(formatPrice(order.totalPrice))}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <section class="section">
+        <div class="label">Комментарий</div>
+        <div class="comment">${escapeHtml(formatComment(order.comment))}</div>
+      </section>
+
+      <section class="signatures">
+        <div class="signature-line">Собрал</div>
+        <div class="signature-line">Проверил</div>
+      </section>
+    </main>
+  </body>
+</html>`;
 };
 
 const normalizeOrderStatus = (value: unknown): OrderStatus => {
@@ -544,6 +837,31 @@ const OrdersPage = () => {
     );
   }, []);
 
+  const handlePrintInvoice = React.useCallback(
+    (order: OrderEntry) => {
+      const printWindow = window.open("", "_blank", "width=900,height=1200");
+
+      if (!printWindow) {
+        toggleNotification({
+          type: "warning",
+          message:
+            "Браузер заблокировал окно печати. Разрешите всплывающие окна для админки.",
+        });
+        return;
+      }
+
+      printWindow.document.open();
+      printWindow.document.write(buildInvoiceHtml(order));
+      printWindow.document.close();
+      printWindow.focus();
+
+      window.setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    },
+    [toggleNotification],
+  );
+
   const filteredOrders = React.useMemo(() => {
     const normalizedSearchValue = searchValue.trim().toLowerCase();
 
@@ -662,7 +980,7 @@ const OrdersPage = () => {
           ) : (
             <Box background="neutral0" hasRadius shadow="tableShadow">
               <Table
-                colCount={7}
+                colCount={8}
                 rowCount={
                   filteredOrders.length +
                   expandedDocumentIds.filter((id) =>
@@ -705,6 +1023,11 @@ const OrdersPage = () => {
                     <Th>
                       <Typography variant="sigma" textColor="neutral600">
                         Создан
+                      </Typography>
+                    </Th>
+                    <Th>
+                      <Typography variant="sigma" textColor="neutral600">
+                        Печать
                       </Typography>
                     </Th>
                   </Tr>
@@ -817,10 +1140,21 @@ const OrdersPage = () => {
                               {formatDate(order.submittedAt)}
                             </Typography>
                           </Td>
+                          <Td>
+                            <Button
+                              type="button"
+                              size="S"
+                              variant="secondary"
+                              startIcon={<FileIcon />}
+                              onClick={() => handlePrintInvoice(order)}
+                            >
+                              Накладная
+                            </Button>
+                          </Td>
                         </Tr>
                         {isExpanded ? (
                           <Tr background="neutral0">
-                            <Td colSpan={7}>
+                            <Td colSpan={8}>
                               <Box paddingTop={3} paddingBottom={3}>
                                 <Typography
                                   variant="omega"
