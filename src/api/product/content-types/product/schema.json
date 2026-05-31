@@ -76,9 +76,9 @@
       "target": "api::category.category",
       "inversedBy": "products"
     },
-    "subcategory": {
+    "subcategories": {
       "type": "relation",
-      "relation": "manyToOne",
+      "relation": "manyToMany",
       "target": "api::subcategory.subcategory",
       "inversedBy": "products"
     }
