@@ -52,6 +52,20 @@ async function migrateOrderStatuses(strapi: Core.Strapi) {
   }
 }
 
+const getRelationId = (relation?: { id?: EntityId } | EntityId | null) =>
+  typeof relation === 'object' && relation !== null ? relation.id : relation;
+
+const haveSameIds = (left: EntityId[], right: EntityId[]) => {
+  const leftIds = new Set(left.map(String));
+  const rightIds = new Set(right.map(String));
+
+  if (leftIds.size !== rightIds.size) {
+    return false;
+  }
+
+  return [...leftIds].every((id) => rightIds.has(id));
+};
+
 const categorySeeds = [
   {
     name: 'Птица/Мясо',
@@ -401,7 +415,13 @@ export default {
 
     for (const product of productSeeds) {
       const categoryId = categoryIdBySlug.get(product.categorySlug);
-      const subcategoryId = subcategoryIdBySlug.get(product.subcategorySlug);
+      const subcategorySlugs =
+        'subcategorySlugs' in product && Array.isArray(product.subcategorySlugs)
+          ? product.subcategorySlugs
+          : [product.subcategorySlug];
+      const subcategoryIds = subcategorySlugs
+        .map((slug) => subcategoryIdBySlug.get(slug))
+        .filter((id): id is EntityId => id !== undefined);
 
       if (!categoryId) {
         continue;
@@ -410,7 +430,7 @@ export default {
       const existingProducts = await strapi.entityService.findMany('api::product.product', {
         filters: { slug: product.slug },
         publicationState: 'preview',
-        populate: ['category', 'subcategory'],
+        populate: ['category', 'subcategories'],
         limit: 1,
       });
 
@@ -418,26 +438,22 @@ export default {
         | ({
             id: EntityId;
             category?: { id?: EntityId } | EntityId | null;
-            subcategory?: { id?: EntityId } | EntityId | null;
+            subcategories?: Array<{ id?: EntityId } | EntityId> | null;
           })
         | null;
 
       if (existingProduct) {
-        const existingCategoryId =
-          typeof existingProduct.category === 'object' && existingProduct.category !== null
-            ? existingProduct.category.id
-            : existingProduct.category;
-        const existingSubcategoryId =
-          typeof existingProduct.subcategory === 'object' && existingProduct.subcategory !== null
-            ? existingProduct.subcategory.id
-            : existingProduct.subcategory;
+        const existingCategoryId = getRelationId(existingProduct.category);
+        const existingSubcategoryIds = (existingProduct.subcategories ?? [])
+          .map(getRelationId)
+          .filter((id): id is EntityId => id !== undefined && id !== null);
 
-        if (existingCategoryId !== categoryId || existingSubcategoryId !== subcategoryId) {
+        if (existingCategoryId !== categoryId || !haveSameIds(existingSubcategoryIds, subcategoryIds)) {
           await strapi.entityService.update('api::product.product', existingProduct.id, {
             data: {
               category: categoryId,
-              subcategory: subcategoryId,
-            },
+              subcategories: subcategoryIds,
+            } as any,
           });
         }
 
@@ -457,9 +473,9 @@ export default {
           unitName: product.unitName,
           descriptionItems: product.descriptionItems,
           category: categoryId,
-          subcategory: subcategoryId,
+          subcategories: subcategoryIds,
           publishedAt: now,
-        },
+        } as any,
       });
     }
   },

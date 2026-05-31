@@ -667,8 +667,8 @@ export interface ApiProductProduct extends Struct.CollectionTypeSchema {
     publishedAt: Schema.Attribute.DateTime;
     seo: Schema.Attribute.Component<'shared.seo', false>;
     slug: Schema.Attribute.UID<'name'> & Schema.Attribute.Required;
-    subcategory: Schema.Attribute.Relation<
-      'manyToOne',
+    subcategories: Schema.Attribute.Relation<
+      'manyToMany',
       'api::subcategory.subcategory'
     >;
     unitName: Schema.Attribute.Enumeration<
@@ -754,7 +754,7 @@ export interface ApiSubcategorySubcategory extends Struct.CollectionTypeSchema {
     > &
       Schema.Attribute.Private;
     name: Schema.Attribute.String & Schema.Attribute.Required;
-    products: Schema.Attribute.Relation<'oneToMany', 'api::product.product'>;
+    products: Schema.Attribute.Relation<'manyToMany', 'api::product.product'>;
     publishedAt: Schema.Attribute.DateTime;
     seo: Schema.Attribute.Component<'shared.seo', false>;
     slug: Schema.Attribute.UID<'name'> & Schema.Attribute.Required;
