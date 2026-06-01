@@ -706,8 +706,22 @@ export interface ApiSiteSettingSiteSetting extends Struct.SingleTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     defaultSeo: Schema.Attribute.Component<'shared.seo', false>;
-    deliveryDateMsk: Schema.Attribute.Date;
-    deliveryDateSpb: Schema.Attribute.Date;
+    deliveryDateMsk: Schema.Attribute.Component<
+      'shared.delivery-date-range',
+      false
+    >;
+    deliveryDateSpb: Schema.Attribute.Component<
+      'shared.delivery-date-range',
+      false
+    >;
+    deliveryTimeIntervalsMsk: Schema.Attribute.Component<
+      'shared.delivery-time-interval',
+      true
+    >;
+    deliveryTimeIntervalsSpb: Schema.Attribute.Component<
+      'shared.delivery-time-interval',
+      true
+    >;
     favicon: Schema.Attribute.Media<'images'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<

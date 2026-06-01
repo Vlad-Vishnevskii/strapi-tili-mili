@@ -41,10 +41,24 @@
       "component": "shared.social-link"
     },
     "deliveryDateSpb": {
-      "type": "date"
+      "type": "component",
+      "repeatable": false,
+      "component": "shared.delivery-date-range"
     },
     "deliveryDateMsk": {
-      "type": "date"
+      "type": "component",
+      "repeatable": false,
+      "component": "shared.delivery-date-range"
+    },
+    "deliveryTimeIntervalsSpb": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.delivery-time-interval"
+    },
+    "deliveryTimeIntervalsMsk": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.delivery-time-interval"
     },
     "promoText": {
       "type": "text"

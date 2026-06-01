@@ -89,6 +89,30 @@ export interface SharedContacts extends Struct.ComponentSchema {
   };
 }
 
+export interface SharedDeliveryDateRange extends Struct.ComponentSchema {
+  collectionName: 'components_shared_delivery_date_ranges';
+  info: {
+    description: 'Delivery date range with start and end dates';
+    displayName: 'Delivery Date Range';
+  };
+  attributes: {
+    dateFrom: Schema.Attribute.Date & Schema.Attribute.Required;
+    dateTo: Schema.Attribute.Date & Schema.Attribute.Required;
+  };
+}
+
+export interface SharedDeliveryTimeInterval extends Struct.ComponentSchema {
+  collectionName: 'components_shared_delivery_time_intervals';
+  info: {
+    description: 'Delivery time interval with start and end time';
+    displayName: 'Delivery Time Interval';
+  };
+  attributes: {
+    timeFrom: Schema.Attribute.Time & Schema.Attribute.Required;
+    timeTo: Schema.Attribute.Time & Schema.Attribute.Required;
+  };
+}
+
 export interface SharedHeroBanner extends Struct.ComponentSchema {
   collectionName: 'components_shared_hero_banners';
   info: {
@@ -161,6 +185,8 @@ declare module '@strapi/strapi' {
       'order.order-item': OrderOrderItem;
       'shared.category-description': SharedCategoryDescription;
       'shared.contacts': SharedContacts;
+      'shared.delivery-date-range': SharedDeliveryDateRange;
+      'shared.delivery-time-interval': SharedDeliveryTimeInterval;
       'shared.hero-banner': SharedHeroBanner;
       'shared.product-description-item': SharedProductDescriptionItem;
       'shared.seo': SharedSeo;

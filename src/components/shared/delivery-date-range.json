@@ -1,0 +1,18 @@
+{
+  "collectionName": "components_shared_delivery_date_ranges",
+  "info": {
+    "displayName": "Delivery Date Range",
+    "description": "Delivery date range with start and end dates"
+  },
+  "options": {},
+  "attributes": {
+    "dateFrom": {
+      "type": "date",
+      "required": true
+    },
+    "dateTo": {
+      "type": "date",
+      "required": true
+    }
+  }
+}

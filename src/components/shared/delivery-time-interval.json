@@ -1,0 +1,18 @@
+{
+  "collectionName": "components_shared_delivery_time_intervals",
+  "info": {
+    "displayName": "Delivery Time Interval",
+    "description": "Delivery time interval with start and end time"
+  },
+  "options": {},
+  "attributes": {
+    "timeFrom": {
+      "type": "time",
+      "required": true
+    },
+    "timeTo": {
+      "type": "time",
+      "required": true
+    }
+  }
+}
