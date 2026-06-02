@@ -15,6 +15,16 @@ function roundDecimal(value: number, fractionDigits = 2) {
   return Number(value.toFixed(fractionDigits));
 }
 
+function isWeightUnitName(unitName: unknown) {
+  if (typeof unitName !== 'string') {
+    return false;
+  }
+
+  const normalizedUnitName = unitName.trim().toLowerCase();
+
+  return normalizedUnitName === 'кг' || normalizedUnitName === 'kg';
+}
+
 function canRecalculateItems(items: unknown[]) {
   return items.every((item) => {
     if (!item || typeof item !== 'object') {
@@ -46,20 +56,25 @@ function recalculateOrderData(data: Record<string, unknown>) {
     const packageWeight = roundDecimal(toFiniteNumber(item.packageWeight, 0) ?? 0, 3);
     const quantity = Math.max(Math.trunc(toFiniteNumber(item.quantity, 0) ?? 0), 0);
     const orderedWeight = roundDecimal(packageWeight * quantity, 3);
+    const isWeightItem = isWeightUnitName(item.unitName);
     const parsedActualWeight = toFiniteNumber(item.actualWeight);
     const parsedItemWeight = toFiniteNumber(item.itemWeight);
-    const nextItemWeight = roundDecimal(
-      parsedActualWeight && parsedActualWeight > 0
-        ? parsedActualWeight
-        : parsedItemWeight && parsedItemWeight > 0
-          ? parsedItemWeight
-          : orderedWeight,
-      3
-    );
+    const nextItemWeight = isWeightItem
+      ? roundDecimal(
+          parsedActualWeight && parsedActualWeight > 0
+            ? parsedActualWeight
+            : parsedItemWeight && parsedItemWeight > 0
+              ? parsedItemWeight
+              : orderedWeight,
+          3
+        )
+      : orderedWeight;
     const itemTotal = roundDecimal(unitPrice * nextItemWeight);
 
     totalItems += quantity;
-    totalWeight += nextItemWeight;
+    if (isWeightItem) {
+      totalWeight += nextItemWeight;
+    }
     totalPrice += itemTotal;
 
     return {
@@ -69,7 +84,7 @@ function recalculateOrderData(data: Record<string, unknown>) {
       quantity,
       itemWeight: nextItemWeight,
       actualWeight:
-        parsedActualWeight && parsedActualWeight > 0 ? nextItemWeight : item.actualWeight ?? null,
+        isWeightItem && parsedActualWeight && parsedActualWeight > 0 ? nextItemWeight : null,
       itemTotal,
     };
   });

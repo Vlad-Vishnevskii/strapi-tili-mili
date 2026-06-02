@@ -91,6 +91,20 @@ function roundDecimal(value: number, fractionDigits = 2) {
   return Number(value.toFixed(fractionDigits));
 }
 
+function isWeightUnitName(unitName: unknown) {
+  if (typeof unitName !== 'string') {
+    return false;
+  }
+
+  const normalizedUnitName = unitName.trim().toLowerCase();
+
+  return normalizedUnitName === 'кг' || normalizedUnitName === 'kg';
+}
+
+function getItemMeasureLabel(unitName: string) {
+  return isWeightUnitName(unitName) ? 'Вес позиции' : 'Количество позиции';
+}
+
 function requireNonEmptyString(value: unknown, fieldName: string) {
   if (typeof value !== 'string' || !value.trim()) {
     throw new errors.ValidationError(`Field "${fieldName}" is required.`);
@@ -271,7 +285,7 @@ async function sendNewOrderNotification(order: {
         `${index + 1}. ${item.productName}`,
         `   Кол-во: ${item.quantity}`,
         `   Фасовка: ${item.packageWeight} ${item.unitName}`,
-        `   Вес позиции: ${item.itemWeight}`,
+        `   ${getItemMeasureLabel(item.unitName)}: ${item.itemWeight} ${item.unitName}`,
         `   Цена за единицу: ${item.unitPrice}`,
         `   Сумма позиции: ${item.itemTotal}`,
       ].join('\n');
@@ -295,7 +309,7 @@ async function sendNewOrderNotification(order: {
     `Комментарий: ${order.comment || '-'}`,
     ``,
     `Товаров: ${order.totalItems}`,
-    `Общий вес: ${order.totalWeight}`,
+    `Вес весовых позиций: ${order.totalWeight} кг`,
     `Общая сумма: ${order.totalPrice}`,
     `Осталось до бесплатной доставки: ${order.amountLeftForFreeDelivery}`,
     ``,
@@ -310,7 +324,7 @@ async function sendNewOrderNotification(order: {
           <strong>${index + 1}. ${item.productName}</strong><br />
           Кол-во: ${item.quantity}<br />
           Фасовка: ${item.packageWeight} ${item.unitName}<br />
-          Вес позиции: ${item.itemWeight}<br />
+          ${getItemMeasureLabel(item.unitName)}: ${item.itemWeight} ${item.unitName}<br />
           Цена за единицу: ${item.unitPrice}<br />
           Сумма позиции: ${item.itemTotal}
         </li>
@@ -334,7 +348,7 @@ async function sendNewOrderNotification(order: {
     <p><strong>Комментарий:</strong> ${order.comment || '-'}</p>
     <hr />
     <p><strong>Товаров:</strong> ${order.totalItems}</p>
-    <p><strong>Общий вес:</strong> ${order.totalWeight}</p>
+    <p><strong>Вес весовых позиций:</strong> ${order.totalWeight} кг</p>
     <p><strong>Общая сумма:</strong> ${order.totalPrice}</p>
     <p><strong>Осталось до бесплатной доставки:</strong> ${order.amountLeftForFreeDelivery}</p>
     <hr />
@@ -392,7 +406,9 @@ export default factories.createCoreService('api::order.order' as any, ({ strapi 
       const itemTotal = roundDecimal(unitPrice * item.packageWeight * item.quantity);
 
       totalItems += item.quantity;
-      totalWeight += itemWeight;
+      if (isWeightUnitName(product.unitName)) {
+        totalWeight += itemWeight;
+      }
       totalPrice += itemTotal;
 
       return {

@@ -220,8 +220,23 @@ const escapeHtml = (value: unknown) =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 
-const getPrintableItemWeight = (item: OrderItem) =>
-  toNumericValue(item.actualWeight ?? item.itemWeight) ?? getOrderedWeight(item);
+const isWeightUnitName = (unitName: string | null | undefined) => {
+  const trimmedUnitName = unitName?.trim();
+  const normalizedUnitName = trimmedUnitName?.toLowerCase();
+
+  return normalizedUnitName === "кг" || normalizedUnitName === "kg";
+};
+
+const isWeightItem = (item: OrderItem) => isWeightUnitName(item.unitName);
+
+const getPrintableItemMeasure = (item: OrderItem) =>
+  isWeightItem(item)
+    ? toNumericValue(item.actualWeight ?? item.itemWeight) ??
+      getOrderedWeight(item)
+    : getOrderedWeight(item);
+
+const getItemMeasureLabel = (item: OrderItem) =>
+  isWeightItem(item) ? "Факт. вес" : "Факт. кол-во";
 
 const buildInvoiceHtml = (order: OrderEntry) => {
   const items = order.items ?? [];
@@ -229,7 +244,7 @@ const buildInvoiceHtml = (order: OrderEntry) => {
     .map((item, index) => {
       const quantity = toNumericValue(item.quantity) ?? 0;
       const packageWeight = toNumericValue(item.packageWeight) ?? 0;
-      const actualWeight = getPrintableItemWeight(item);
+      const actualMeasure = getPrintableItemMeasure(item);
       const unitPrice = getItemUnitPrice(item);
 
       return `
@@ -239,7 +254,7 @@ const buildInvoiceHtml = (order: OrderEntry) => {
           <td class="cell">${escapeHtml(item.freezeLabel || "")}</td>
           <td class="cell numeric">${escapeHtml(quantity)}</td>
           <td class="cell numeric">${escapeHtml(formatWeight(packageWeight))} ${escapeHtml(item.unitName ?? "")}</td>
-          <td class="cell numeric">${escapeHtml(formatWeight(actualWeight))} ${escapeHtml(item.unitName ?? "")}</td>
+          <td class="cell numeric">${escapeHtml(getItemMeasureLabel(item))}: ${escapeHtml(formatWeight(actualMeasure))} ${escapeHtml(item.unitName ?? "")}</td>
           <td class="cell numeric">${escapeHtml(formatPrice(unitPrice ?? 0))}</td>
           <td class="cell numeric total">${escapeHtml(formatPrice(item.itemTotal ?? 0))}</td>
         </tr>
@@ -466,7 +481,7 @@ const buildInvoiceHtml = (order: OrderEntry) => {
               <th>Заморозка</th>
               <th>Кол-во</th>
               <th>Фасовка</th>
-              <th>Факт. вес</th>
+              <th>Факт.</th>
               <th>Цена</th>
               <th>Сумма</th>
             </tr>
@@ -488,8 +503,8 @@ const buildInvoiceHtml = (order: OrderEntry) => {
               <td>${escapeHtml(order.totalItems)}</td>
             </tr>
             <tr>
-              <td>Общий вес</td>
-              <td>${escapeHtml(formatWeight(order.totalWeight))}</td>
+              <td>Вес весовых позиций</td>
+              <td>${escapeHtml(formatWeight(order.totalWeight))} кг</td>
             </tr>
             <tr>
               <td>Итого</td>
@@ -576,7 +591,9 @@ const recalculateOrder = (
   const totalWeight = roundDecimal(
     items.reduce(
       (sum, item) =>
-        sum + (toNumericValue(item.itemWeight) ?? getOrderedWeight(item)),
+        isWeightItem(item)
+          ? sum + (toNumericValue(item.itemWeight) ?? getOrderedWeight(item))
+          : sum,
       0,
     ),
     3,
@@ -778,6 +795,10 @@ const OrdersPage = () => {
       const currentItem = currentOrder?.items?.[itemIndex];
 
       if (!currentOrder || !currentItem || !currentOrder.items) {
+        return;
+      }
+
+      if (!isWeightItem(currentItem)) {
         return;
       }
 
@@ -1345,6 +1366,10 @@ const OrdersPage = () => {
                                       }`;
                                       const isWeightSaving =
                                         savingWeightKey === weightKey;
+                                      const isCurrentWeightItem =
+                                        isWeightItem(item);
+                                      const printableMeasure =
+                                        getPrintableItemMeasure(item);
 
                                       return (
                                         <Box
@@ -1403,40 +1428,60 @@ const OrdersPage = () => {
                                               alignItems="flex-start"
                                               wrap="wrap"
                                             >
-                                              <Box width="160px">
-                                                <TextInput
-                                                  aria-label={`Фактический вес позиции ${item.productName || index + 1}`}
-                                                  label="Факт. вес"
-                                                  name={`actualWeight-${weightKey}`}
-                                                  inputMode="decimal"
-                                                  value={getActualWeightInputValue(
-                                                    item,
-                                                  )}
-                                                  disabled={isWeightSaving}
-                                                  onChange={(
-                                                    event: React.ChangeEvent<HTMLInputElement>,
-                                                  ) =>
-                                                    handleActualWeightInputChange(
-                                                      order.documentId,
-                                                      index,
-                                                      event.target.value,
-                                                    )
-                                                  }
-                                                  onBlur={() =>
-                                                    void handleActualWeightSave(
-                                                      order.documentId,
-                                                      index,
-                                                    )
-                                                  }
-                                                  onKeyDown={(
-                                                    event: React.KeyboardEvent<HTMLInputElement>,
-                                                  ) => {
-                                                    if (event.key === "Enter") {
-                                                      event.currentTarget.blur();
+                                              {isCurrentWeightItem ? (
+                                                <Box width="160px">
+                                                  <TextInput
+                                                    aria-label={`Фактический вес позиции ${item.productName || index + 1}`}
+                                                    label="Факт. вес"
+                                                    name={`actualWeight-${weightKey}`}
+                                                    inputMode="decimal"
+                                                    value={getActualWeightInputValue(
+                                                      item,
+                                                    )}
+                                                    disabled={isWeightSaving}
+                                                    onChange={(
+                                                      event: React.ChangeEvent<HTMLInputElement>,
+                                                    ) =>
+                                                      handleActualWeightInputChange(
+                                                        order.documentId,
+                                                        index,
+                                                        event.target.value,
+                                                      )
                                                     }
-                                                  }}
-                                                />
-                                              </Box>
+                                                    onBlur={() =>
+                                                      void handleActualWeightSave(
+                                                        order.documentId,
+                                                        index,
+                                                      )
+                                                    }
+                                                    onKeyDown={(
+                                                      event: React.KeyboardEvent<HTMLInputElement>,
+                                                    ) => {
+                                                      if (event.key === "Enter") {
+                                                        event.currentTarget.blur();
+                                                      }
+                                                    }}
+                                                  />
+                                                </Box>
+                                              ) : (
+                                                <Box minWidth="160px">
+                                                  <Typography
+                                                    variant="pi"
+                                                    textColor="neutral600"
+                                                  >
+                                                    Факт. кол-во
+                                                  </Typography>
+                                                  <Typography
+                                                    fontWeight="bold"
+                                                    textColor="neutral800"
+                                                  >
+                                                    {formatWeight(
+                                                      printableMeasure,
+                                                    )}{" "}
+                                                    {item.unitName ?? ""}
+                                                  </Typography>
+                                                </Box>
+                                              )}
 
                                               <Box
                                                 minWidth="120px"
