@@ -197,6 +197,21 @@ const formatComment = (value: string | null | undefined) => {
   return value.trim();
 };
 
+const normalizeFilterValue = (value: string | null | undefined) =>
+  value?.trim() ?? "";
+
+const getUniqueFilterOptions = (
+  orders: OrderEntry[],
+  getValue: (order: OrderEntry) => string | null | undefined,
+) =>
+  Array.from(
+    new Set(
+      orders
+        .map((order) => normalizeFilterValue(getValue(order)))
+        .filter(Boolean),
+    ),
+  ).sort((left, right) => left.localeCompare(right, "ru"));
+
 const escapeHtml = (value: unknown) =>
   String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -640,6 +655,11 @@ const OrdersPage = () => {
   const [statusFilter, setStatusFilter] = React.useState<"all" | OrderStatus>(
     "all",
   );
+  const [deliveryRegionFilter, setDeliveryRegionFilter] =
+    React.useState("all");
+  const [deliveryDateFilter, setDeliveryDateFilter] = React.useState("all");
+  const [deliveryTimeIntervalFilter, setDeliveryTimeIntervalFilter] =
+    React.useState("all");
   const [savingDocumentId, setSavingDocumentId] = React.useState<string | null>(
     null,
   );
@@ -878,14 +898,47 @@ const OrdersPage = () => {
     [toggleNotification],
   );
 
+  const deliveryRegionOptions = React.useMemo(
+    () => getUniqueFilterOptions(orders, (order) => order.deliveryRegion),
+    [orders],
+  );
+  const deliveryDateOptions = React.useMemo(
+    () => getUniqueFilterOptions(orders, (order) => order.deliveryDate),
+    [orders],
+  );
+  const deliveryTimeIntervalOptions = React.useMemo(
+    () =>
+      getUniqueFilterOptions(orders, (order) => order.deliveryTimeInterval),
+    [orders],
+  );
+
   const filteredOrders = React.useMemo(() => {
     const normalizedSearchValue = searchValue.trim().toLowerCase();
 
     return orders.filter((order) => {
       const matchesStatus =
         statusFilter === "all" ? true : order.orderStatus === statusFilter;
+      const matchesDeliveryRegion =
+        deliveryRegionFilter === "all"
+          ? true
+          : normalizeFilterValue(order.deliveryRegion) ===
+            deliveryRegionFilter;
+      const matchesDeliveryDate =
+        deliveryDateFilter === "all"
+          ? true
+          : normalizeFilterValue(order.deliveryDate) === deliveryDateFilter;
+      const matchesDeliveryTimeInterval =
+        deliveryTimeIntervalFilter === "all"
+          ? true
+          : normalizeFilterValue(order.deliveryTimeInterval) ===
+            deliveryTimeIntervalFilter;
 
-      if (!matchesStatus) {
+      if (
+        !matchesStatus ||
+        !matchesDeliveryRegion ||
+        !matchesDeliveryDate ||
+        !matchesDeliveryTimeInterval
+      ) {
         return false;
       }
 
@@ -909,7 +962,14 @@ const OrdersPage = () => {
         String(part).toLowerCase().includes(normalizedSearchValue),
       );
     });
-  }, [orders, searchValue, statusFilter]);
+  }, [
+    deliveryDateFilter,
+    deliveryRegionFilter,
+    deliveryTimeIntervalFilter,
+    orders,
+    searchValue,
+    statusFilter,
+  ]);
 
   if (isLoading) {
     return (
@@ -993,6 +1053,69 @@ const OrdersPage = () => {
                   ))}
                 </SingleSelect>
               </Box>
+
+              <Box minWidth="220px">
+                <SingleSelect
+                  aria-label="Фильтр по городу доставки"
+                  label="Город"
+                  placeholder="Все города"
+                  value={deliveryRegionFilter}
+                  onChange={(value) => setDeliveryRegionFilter(String(value))}
+                >
+                  <SingleSelectOption value="all">
+                    Все города
+                  </SingleSelectOption>
+                  {deliveryRegionOptions.map((deliveryRegion) => (
+                    <SingleSelectOption
+                      key={deliveryRegion}
+                      value={deliveryRegion}
+                    >
+                      {deliveryRegion}
+                    </SingleSelectOption>
+                  ))}
+                </SingleSelect>
+              </Box>
+
+              <Box minWidth="220px">
+                <SingleSelect
+                  aria-label="Фильтр по дате доставки"
+                  label="Дата доставки"
+                  placeholder="Все даты"
+                  value={deliveryDateFilter}
+                  onChange={(value) => setDeliveryDateFilter(String(value))}
+                >
+                  <SingleSelectOption value="all">Все даты</SingleSelectOption>
+                  {deliveryDateOptions.map((deliveryDate) => (
+                    <SingleSelectOption key={deliveryDate} value={deliveryDate}>
+                      {deliveryDate}
+                    </SingleSelectOption>
+                  ))}
+                </SingleSelect>
+              </Box>
+
+              <Box minWidth="220px">
+                <SingleSelect
+                  aria-label="Фильтр по интервалу доставки"
+                  label="Интервал"
+                  placeholder="Все интервалы"
+                  value={deliveryTimeIntervalFilter}
+                  onChange={(value) =>
+                    setDeliveryTimeIntervalFilter(String(value))
+                  }
+                >
+                  <SingleSelectOption value="all">
+                    Все интервалы
+                  </SingleSelectOption>
+                  {deliveryTimeIntervalOptions.map((deliveryTimeInterval) => (
+                    <SingleSelectOption
+                      key={deliveryTimeInterval}
+                      value={deliveryTimeInterval}
+                    >
+                      {deliveryTimeInterval}
+                    </SingleSelectOption>
+                  ))}
+                </SingleSelect>
+              </Box>
             </Flex>
           </Flex>
 
@@ -1001,7 +1124,7 @@ const OrdersPage = () => {
           ) : (
             <Box background="neutral0" hasRadius shadow="tableShadow">
               <Table
-                colCount={8}
+                colCount={9}
                 rowCount={
                   filteredOrders.length +
                   expandedDocumentIds.filter((id) =>
@@ -1024,6 +1147,11 @@ const OrdersPage = () => {
                     <Th>
                       <Typography variant="sigma" textColor="neutral600">
                         Телефон
+                      </Typography>
+                    </Th>
+                    <Th>
+                      <Typography variant="sigma" textColor="neutral600">
+                        Доставка
                       </Typography>
                     </Th>
                     <Th>
@@ -1119,6 +1247,23 @@ const OrdersPage = () => {
                             </Typography>
                           </Td>
                           <Td>
+                            <Flex
+                              direction="column"
+                              alignItems="flex-start"
+                              gap={1}
+                            >
+                              <Typography textColor="neutral800">
+                                {formatComment(order.deliveryRegion)}
+                              </Typography>
+                              <Typography variant="pi" textColor="neutral600">
+                                {formatComment(order.deliveryDate)}
+                              </Typography>
+                              <Typography variant="pi" textColor="neutral600">
+                                {formatComment(order.deliveryTimeInterval)}
+                              </Typography>
+                            </Flex>
+                          </Td>
+                          <Td>
                             <Typography textColor="neutral700">
                               {formatComment(order.comment)}
                             </Typography>
@@ -1175,7 +1320,7 @@ const OrdersPage = () => {
                         </Tr>
                         {isExpanded ? (
                           <Tr background="neutral0">
-                            <Td colSpan={8}>
+                            <Td colSpan={9}>
                               <Box paddingTop={3} paddingBottom={3}>
                                 <Typography
                                   variant="omega"
