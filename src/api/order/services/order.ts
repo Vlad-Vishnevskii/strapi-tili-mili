@@ -7,9 +7,15 @@ type RawPayload = {
   customerPhone?: unknown;
   customerEmail?: unknown;
   deliveryAddress?: unknown;
+  deliveryRegion?: unknown;
+  deliveryRegionCode?: unknown;
+  deliveryDate?: unknown;
+  deliveryTimeInterval?: unknown;
   comment?: unknown;
   items?: unknown;
 };
+
+type DeliveryRegionCode = 'msk' | 'spb';
 
 type NormalizedOrderItemInput = {
   productId: number;
@@ -22,6 +28,10 @@ type NormalizedOrderRequest = {
   customerPhone: string;
   customerEmail?: string;
   deliveryAddress: string;
+  deliveryRegion?: string;
+  deliveryRegionCode?: DeliveryRegionCode;
+  deliveryDate?: string;
+  deliveryTimeInterval?: string;
   comment?: string;
   items: NormalizedOrderItemInput[];
 };
@@ -117,11 +127,40 @@ function normalizeOptionalEmail(value: unknown, fieldName: string) {
   return requireEmail(value, fieldName);
 }
 
+function normalizeOptionalString(value: unknown) {
+  if (typeof value !== 'string' || !value.trim()) {
+    return undefined;
+  }
+
+  return value.trim();
+}
+
+function normalizeOptionalDeliveryRegionCode(value: unknown, fieldName: string) {
+  const normalizedValue = normalizeOptionalString(value);
+
+  if (normalizedValue === undefined) {
+    return undefined;
+  }
+
+  if (normalizedValue !== 'msk' && normalizedValue !== 'spb') {
+    throw new errors.ValidationError(`Field "${fieldName}" must be either "msk" or "spb".`);
+  }
+
+  return normalizedValue;
+}
+
 function normalizeOrderRequest(payload: RawPayload): NormalizedOrderRequest {
   const customerName = requireNonEmptyString(payload.customerName, 'customerName');
   const customerPhone = requireNonEmptyString(payload.customerPhone, 'customerPhone');
   const customerEmail = normalizeOptionalEmail(payload.customerEmail, 'customerEmail');
   const deliveryAddress = requireNonEmptyString(payload.deliveryAddress, 'deliveryAddress');
+  const deliveryRegion = normalizeOptionalString(payload.deliveryRegion);
+  const deliveryRegionCode = normalizeOptionalDeliveryRegionCode(
+    payload.deliveryRegionCode,
+    'deliveryRegionCode'
+  );
+  const deliveryDate = normalizeOptionalString(payload.deliveryDate);
+  const deliveryTimeInterval = normalizeOptionalString(payload.deliveryTimeInterval);
 
   if (!Array.isArray(payload.items) || payload.items.length === 0) {
     throw new errors.ValidationError('Field "items" must be a non-empty array.');
@@ -164,6 +203,10 @@ function normalizeOrderRequest(payload: RawPayload): NormalizedOrderRequest {
     customerPhone,
     customerEmail,
     deliveryAddress,
+    deliveryRegion,
+    deliveryRegionCode,
+    deliveryDate,
+    deliveryTimeInterval,
     comment,
     items,
   };
@@ -185,6 +228,10 @@ async function sendNewOrderNotification(order: {
   customerPhone: string;
   customerEmail?: string;
   deliveryAddress: string;
+  deliveryRegion?: string;
+  deliveryRegionCode?: DeliveryRegionCode;
+  deliveryDate?: string;
+  deliveryTimeInterval?: string;
   comment?: string;
   totalItems: number;
   totalWeight: number;
@@ -242,6 +289,9 @@ async function sendNewOrderNotification(order: {
     `Телефон: ${order.customerPhone}`,
     `Email: ${order.customerEmail || '-'}`,
     `Адрес: ${order.deliveryAddress}`,
+    `Регион доставки: ${order.deliveryRegion || '-'} (${order.deliveryRegionCode || '-'})`,
+    `Дата доставки: ${order.deliveryDate || '-'}`,
+    `Интервал доставки: ${order.deliveryTimeInterval || '-'}`,
     `Комментарий: ${order.comment || '-'}`,
     ``,
     `Товаров: ${order.totalItems}`,
@@ -278,6 +328,9 @@ async function sendNewOrderNotification(order: {
     <p><strong>Телефон:</strong> ${order.customerPhone}</p>
     <p><strong>Email:</strong> ${order.customerEmail || '-'}</p>
     <p><strong>Адрес:</strong> ${order.deliveryAddress}</p>
+    <p><strong>Регион доставки:</strong> ${order.deliveryRegion || '-'} (${order.deliveryRegionCode || '-'})</p>
+    <p><strong>Дата доставки:</strong> ${order.deliveryDate || '-'}</p>
+    <p><strong>Интервал доставки:</strong> ${order.deliveryTimeInterval || '-'}</p>
     <p><strong>Комментарий:</strong> ${order.comment || '-'}</p>
     <hr />
     <p><strong>Товаров:</strong> ${order.totalItems}</p>
@@ -386,6 +439,10 @@ export default factories.createCoreService('api::order.order' as any, ({ strapi 
         customerPhone: payload.customerPhone,
         customerEmail: payload.customerEmail ?? null,
         deliveryAddress: payload.deliveryAddress,
+        deliveryRegion: payload.deliveryRegion ?? null,
+        deliveryRegionCode: payload.deliveryRegionCode ?? null,
+        deliveryDate: payload.deliveryDate ?? null,
+        deliveryTimeInterval: payload.deliveryTimeInterval ?? null,
         comment: payload.comment ?? null,
         totalItems,
         totalWeight: roundedTotalWeight,
@@ -413,6 +470,10 @@ export default factories.createCoreService('api::order.order' as any, ({ strapi 
       customerPhone: payload.customerPhone,
       customerEmail: payload.customerEmail,
       deliveryAddress: payload.deliveryAddress,
+      deliveryRegion: payload.deliveryRegion,
+      deliveryRegionCode: payload.deliveryRegionCode,
+      deliveryDate: payload.deliveryDate,
+      deliveryTimeInterval: payload.deliveryTimeInterval,
       comment: payload.comment,
       totalItems,
       totalWeight: roundedTotalWeight,

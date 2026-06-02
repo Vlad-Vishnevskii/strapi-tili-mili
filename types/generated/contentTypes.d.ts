@@ -570,6 +570,10 @@ export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
     customerName: Schema.Attribute.String & Schema.Attribute.Required;
     customerPhone: Schema.Attribute.String & Schema.Attribute.Required;
     deliveryAddress: Schema.Attribute.Text & Schema.Attribute.Required;
+    deliveryDate: Schema.Attribute.String;
+    deliveryRegion: Schema.Attribute.String;
+    deliveryRegionCode: Schema.Attribute.Enumeration<['msk', 'spb']>;
+    deliveryTimeInterval: Schema.Attribute.String;
     items: Schema.Attribute.Component<'order.order-item', true> &
       Schema.Attribute.Required &
       Schema.Attribute.SetMinMax<

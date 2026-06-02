@@ -43,6 +43,22 @@
       "type": "text",
       "required": true
     },
+    "deliveryRegion": {
+      "type": "string"
+    },
+    "deliveryRegionCode": {
+      "type": "enumeration",
+      "enum": [
+        "msk",
+        "spb"
+      ]
+    },
+    "deliveryDate": {
+      "type": "string"
+    },
+    "deliveryTimeInterval": {
+      "type": "string"
+    },
     "comment": {
       "type": "text"
     },

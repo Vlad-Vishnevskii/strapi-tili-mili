@@ -47,6 +47,10 @@ type OrderEntry = {
   customerPhone: string;
   customerEmail?: string | null;
   deliveryAddress?: string | null;
+  deliveryRegion?: string | null;
+  deliveryRegionCode?: "msk" | "spb" | null;
+  deliveryDate?: string | null;
+  deliveryTimeInterval?: string | null;
   comment?: string | null;
   items?: OrderItem[];
   totalItems: number;
@@ -422,6 +426,18 @@ const buildInvoiceHtml = (order: OrderEntry) => {
         <div>
           <div class="label">Адрес доставки</div>
           <div class="value">${escapeHtml(formatComment(order.deliveryAddress))}</div>
+        </div>
+        <div>
+          <div class="label">Регион доставки</div>
+          <div class="value">${escapeHtml(formatComment(order.deliveryRegion))} (${escapeHtml(formatComment(order.deliveryRegionCode))})</div>
+        </div>
+        <div>
+          <div class="label">Дата доставки</div>
+          <div class="value">${escapeHtml(formatComment(order.deliveryDate))}</div>
+        </div>
+        <div>
+          <div class="label">Интервал доставки</div>
+          <div class="value">${escapeHtml(formatComment(order.deliveryTimeInterval))}</div>
         </div>
       </section>
 
@@ -881,6 +897,11 @@ const OrdersPage = () => {
         order.orderNumber,
         order.customerName,
         order.customerPhone,
+        order.deliveryRegion ?? "",
+        order.deliveryRegionCode ?? "",
+        order.deliveryDate ?? "",
+        order.deliveryTimeInterval ?? "",
+        order.deliveryAddress ?? "",
         order.comment ?? "",
       ];
 
