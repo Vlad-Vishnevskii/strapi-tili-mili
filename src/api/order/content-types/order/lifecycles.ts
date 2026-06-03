@@ -25,6 +25,10 @@ function isWeightUnitName(unitName: unknown) {
   return normalizedUnitName === 'кг' || normalizedUnitName === 'kg';
 }
 
+function getPricedItemMeasure(isWeightItem: boolean, itemWeight: number, quantity: number) {
+  return isWeightItem ? itemWeight : quantity;
+}
+
 function canRecalculateItems(items: unknown[]) {
   return items.every((item) => {
     if (!item || typeof item !== 'object') {
@@ -69,7 +73,9 @@ function recalculateOrderData(data: Record<string, unknown>) {
           3
         )
       : orderedWeight;
-    const itemTotal = roundDecimal(unitPrice * nextItemWeight);
+    const itemTotal = roundDecimal(
+      unitPrice * getPricedItemMeasure(isWeightItem, nextItemWeight, quantity)
+    );
 
     totalItems += quantity;
     if (isWeightItem) {

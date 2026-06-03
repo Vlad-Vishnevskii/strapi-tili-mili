@@ -557,6 +557,14 @@ const getOrderedWeight = (item: OrderItem) => {
   return roundDecimal(packageWeight * quantity, 3);
 };
 
+const getPricedItemMeasure = (item: OrderItem) => {
+  if (isWeightItem(item)) {
+    return getPrintableItemMeasure(item);
+  }
+
+  return Math.max(Math.trunc(toNumericValue(item.quantity) ?? 0), 0);
+};
+
 const getItemUnitPrice = (item: OrderItem) => {
   const unitPrice = toNumericValue(item.unitPrice);
 
@@ -565,10 +573,10 @@ const getItemUnitPrice = (item: OrderItem) => {
   }
 
   const itemTotal = toNumericValue(item.itemTotal);
-  const orderedWeight = getOrderedWeight(item);
+  const pricedMeasure = getPricedItemMeasure(item);
 
-  if (itemTotal !== null && orderedWeight > 0) {
-    return itemTotal / orderedWeight;
+  if (itemTotal !== null && pricedMeasure > 0) {
+    return itemTotal / pricedMeasure;
   }
 
   return null;
@@ -1417,8 +1425,9 @@ const OrdersPage = () => {
                                                   textColor="neutral600"
                                                 >
                                                   {formatPrice(unitPrice ?? 0)}{" "}
-                                                  за 1{" "}
-                                                  {item.unitName ?? "ед."}
+                                                  {isCurrentWeightItem
+                                                    ? "за 1 кг"
+                                                    : "за единицу"}
                                                 </Typography>
                                               </Flex>
                                             </Box>

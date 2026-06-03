@@ -105,6 +105,14 @@ function getItemMeasureLabel(unitName: string) {
   return isWeightUnitName(unitName) ? 'Вес позиции' : 'Количество позиции';
 }
 
+function getItemPriceLabel(unitName: string) {
+  return isWeightUnitName(unitName) ? 'Цена за кг' : 'Цена за единицу';
+}
+
+function getPricedItemMeasure(unitName: string, itemWeight: number, quantity: number) {
+  return isWeightUnitName(unitName) ? itemWeight : quantity;
+}
+
 function requireNonEmptyString(value: unknown, fieldName: string) {
   if (typeof value !== 'string' || !value.trim()) {
     throw new errors.ValidationError(`Field "${fieldName}" is required.`);
@@ -286,7 +294,7 @@ async function sendNewOrderNotification(order: {
         `   Кол-во: ${item.quantity}`,
         `   Фасовка: ${item.packageWeight} ${item.unitName}`,
         `   ${getItemMeasureLabel(item.unitName)}: ${item.itemWeight} ${item.unitName}`,
-        `   Цена за единицу: ${item.unitPrice}`,
+        `   ${getItemPriceLabel(item.unitName)}: ${item.unitPrice}`,
         `   Сумма позиции: ${item.itemTotal}`,
       ].join('\n');
     })
@@ -325,7 +333,7 @@ async function sendNewOrderNotification(order: {
           Кол-во: ${item.quantity}<br />
           Фасовка: ${item.packageWeight} ${item.unitName}<br />
           ${getItemMeasureLabel(item.unitName)}: ${item.itemWeight} ${item.unitName}<br />
-          Цена за единицу: ${item.unitPrice}<br />
+          ${getItemPriceLabel(item.unitName)}: ${item.unitPrice}<br />
           Сумма позиции: ${item.itemTotal}
         </li>
       `;
@@ -403,7 +411,8 @@ export default factories.createCoreService('api::order.order' as any, ({ strapi 
 
       const unitPrice = roundDecimal(toFiniteNumber(product.price));
       const itemWeight = roundDecimal(item.packageWeight * item.quantity, 3);
-      const itemTotal = roundDecimal(unitPrice * item.packageWeight * item.quantity);
+      const pricedMeasure = getPricedItemMeasure(product.unitName, itemWeight, item.quantity);
+      const itemTotal = roundDecimal(unitPrice * pricedMeasure);
 
       totalItems += item.quantity;
       if (isWeightUnitName(product.unitName)) {
