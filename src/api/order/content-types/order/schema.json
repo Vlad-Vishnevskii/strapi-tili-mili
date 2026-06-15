@@ -59,6 +59,11 @@
     "deliveryTimeInterval": {
       "type": "string"
     },
+    "deliveryCost": {
+      "type": "decimal",
+      "min": 0,
+      "default": 0
+    },
     "comment": {
       "type": "text"
     },

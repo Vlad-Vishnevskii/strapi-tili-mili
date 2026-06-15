@@ -4,7 +4,6 @@ import {
   Box,
   Button,
   Flex,
-  Link,
   Loader,
   SingleSelect,
   SingleSelectOption,
@@ -51,6 +50,7 @@ type OrderEntry = {
   deliveryRegionCode?: "msk" | "spb" | null;
   deliveryDate?: string | null;
   deliveryTimeInterval?: string | null;
+  deliveryCost?: number | string | null;
   comment?: string | null;
   items?: OrderItem[];
   totalItems: number;
@@ -80,24 +80,6 @@ const LEGACY_ORDER_STATUS_MAP: Record<string, OrderStatus> = {
   confirmed: "delivering",
   packed: "delivering",
   cancelled: "done",
-};
-
-const STATUS_SELECT_STYLES: Record<
-  OrderStatus,
-  { background: string; borderColor: string }
-> = {
-  new: {
-    background: "warning100",
-    borderColor: "warning300",
-  },
-  delivering: {
-    background: "alternative100",
-    borderColor: "alternative200",
-  },
-  done: {
-    background: "success100",
-    borderColor: "success200",
-  },
 };
 
 const STATUS_ROW_BACKGROUNDS: Record<OrderStatus, string> = {
@@ -243,19 +225,14 @@ const buildInvoiceHtml = (order: OrderEntry) => {
   const rows = items
     .map((item, index) => {
       const quantity = toNumericValue(item.quantity) ?? 0;
-      const packageWeight = toNumericValue(item.packageWeight) ?? 0;
       const actualMeasure = getPrintableItemMeasure(item);
-      const unitPrice = getItemUnitPrice(item);
 
       return `
         <tr>
           <td class="cell muted">${index + 1}</td>
           <td class="cell name">${escapeHtml(item.productName || `Позиция ${index + 1}`)}</td>
-          <td class="cell">${escapeHtml(item.freezeLabel || "")}</td>
           <td class="cell numeric">${escapeHtml(quantity)}</td>
-          <td class="cell numeric">${escapeHtml(formatWeight(packageWeight))} ${escapeHtml(item.unitName ?? "")}</td>
           <td class="cell numeric">${escapeHtml(getItemMeasureLabel(item))}: ${escapeHtml(formatWeight(actualMeasure))} ${escapeHtml(item.unitName ?? "")}</td>
-          <td class="cell numeric">${escapeHtml(formatPrice(unitPrice ?? 0))}</td>
           <td class="cell numeric total">${escapeHtml(formatPrice(item.itemTotal ?? 0))}</td>
         </tr>
       `;
@@ -407,18 +384,6 @@ const buildInvoiceHtml = (order: OrderEntry) => {
         white-space: pre-wrap;
       }
 
-      .signatures {
-        display: grid;
-        gap: 32px;
-        grid-template-columns: 1fr 1fr;
-        margin-top: 44px;
-      }
-
-      .signature-line {
-        border-top: 1px solid #1f2933;
-        padding-top: 8px;
-      }
-
       @media print {
         body {
           print-color-adjust: exact;
@@ -478,18 +443,15 @@ const buildInvoiceHtml = (order: OrderEntry) => {
             <tr>
               <th>№</th>
               <th>Товар</th>
-              <th>Заморозка</th>
               <th>Кол-во</th>
-              <th>Фасовка</th>
               <th>Факт.</th>
-              <th>Цена</th>
               <th>Сумма</th>
             </tr>
           </thead>
           <tbody>
             ${
               rows ||
-              `<tr><td class="cell" colspan="8">Позиции заказа не найдены.</td></tr>`
+              `<tr><td class="cell" colspan="5">Позиции заказа не найдены.</td></tr>`
             }
           </tbody>
         </table>
@@ -510,6 +472,10 @@ const buildInvoiceHtml = (order: OrderEntry) => {
               <td>Итого</td>
               <td>${escapeHtml(formatPrice(order.totalPrice))}</td>
             </tr>
+            <tr>
+              <td>Стоимость доставки</td>
+              <td>${escapeHtml(formatPrice(order.deliveryCost ?? 0))}</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -519,10 +485,6 @@ const buildInvoiceHtml = (order: OrderEntry) => {
         <div class="comment">${escapeHtml(formatComment(order.comment))}</div>
       </section>
 
-      <section class="signatures">
-        <div class="signature-line">Собрал</div>
-        <div class="signature-line">Проверил</div>
-      </section>
     </main>
   </body>
 </html>`;
@@ -586,6 +548,9 @@ const getActualWeightInputValue = (item: OrderItem) =>
   formatInputValue(
     item.actualWeight ?? item.itemWeight ?? getOrderedWeight(item),
   );
+
+const getDeliveryCostInputValue = (order: OrderEntry) =>
+  formatInputValue(order.deliveryCost ?? 0);
 
 const recalculateOrder = (
   order: OrderEntry,
@@ -691,6 +656,8 @@ const OrdersPage = () => {
   const [savingWeightKey, setSavingWeightKey] = React.useState<string | null>(
     null,
   );
+  const [savingDeliveryCostDocumentId, setSavingDeliveryCostDocumentId] =
+    React.useState<string | null>(null);
   const [expandedDocumentIds, setExpandedDocumentIds] = React.useState<
     string[]
   >([]);
@@ -894,6 +861,83 @@ const OrdersPage = () => {
     [orders, put, savingWeightKey, toggleNotification],
   );
 
+  const handleDeliveryCostInputChange = React.useCallback(
+    (documentId: string, value: string) => {
+      setOrders((currentOrders) =>
+        currentOrders.map((order) =>
+          order.documentId === documentId
+            ? { ...order, deliveryCost: value }
+            : order,
+        ),
+      );
+    },
+    [],
+  );
+
+  const handleDeliveryCostSave = React.useCallback(
+    async (documentId: string) => {
+      const currentOrder = orders.find(
+        (order) => order.documentId === documentId,
+      );
+
+      if (!currentOrder || savingDeliveryCostDocumentId === documentId) {
+        return;
+      }
+
+      const deliveryCost = toNumericValue(currentOrder.deliveryCost ?? 0) ?? 0;
+
+      if (deliveryCost < 0) {
+        toggleNotification({
+          type: "danger",
+          message: "Стоимость доставки не может быть меньше 0.",
+        });
+        return;
+      }
+
+      const nextOrder = {
+        ...currentOrder,
+        deliveryCost: roundDecimal(deliveryCost),
+      };
+
+      setSavingDeliveryCostDocumentId(documentId);
+      setOrders((currentOrders) =>
+        currentOrders.map((order) =>
+          order.documentId === documentId ? nextOrder : order,
+        ),
+      );
+
+      try {
+        await put(
+          `/content-manager/collection-types/api::order.order/${documentId}`,
+          {
+            deliveryCost: nextOrder.deliveryCost,
+          },
+        );
+
+        toggleNotification({
+          type: "success",
+          message: `Стоимость доставки заказа ${currentOrder.orderNumber} обновлена.`,
+        });
+      } catch {
+        setOrders((currentOrders) =>
+          currentOrders.map((order) =>
+            order.documentId === documentId ? currentOrder : order,
+          ),
+        );
+
+        toggleNotification({
+          type: "danger",
+          message: "Не удалось сохранить стоимость доставки.",
+        });
+      } finally {
+        setSavingDeliveryCostDocumentId((currentDocumentId) =>
+          currentDocumentId === documentId ? null : currentDocumentId,
+        );
+      }
+    },
+    [orders, put, savingDeliveryCostDocumentId, toggleNotification],
+  );
+
   const toggleExpandedOrder = React.useCallback((documentId: string) => {
     setExpandedDocumentIds((currentIds) =>
       currentIds.includes(documentId)
@@ -1050,9 +1094,11 @@ const OrdersPage = () => {
 
             <Flex gap={4} wrap="wrap" alignItems="flex-end">
               <Box minWidth="320px">
+                <Typography variant="pi" textColor="neutral600">
+                  Поиск
+                </Typography>
                 <TextInput
                   aria-label="Поиск по заказам"
-                  label="Поиск"
                   name="search"
                   placeholder="Номер, имя, телефон, комментарий"
                   value={searchValue}
@@ -1063,9 +1109,11 @@ const OrdersPage = () => {
               </Box>
 
               <Box minWidth="220px">
+                <Typography variant="pi" textColor="neutral600">
+                  Статус
+                </Typography>
                 <SingleSelect
                   aria-label="Фильтр по статусу"
-                  label="Статус"
                   placeholder="Все статусы"
                   value={statusFilter}
                   onChange={(value) =>
@@ -1084,9 +1132,11 @@ const OrdersPage = () => {
               </Box>
 
               <Box minWidth="220px">
+                <Typography variant="pi" textColor="neutral600">
+                  Город
+                </Typography>
                 <SingleSelect
                   aria-label="Фильтр по городу доставки"
-                  label="Город"
                   placeholder="Все города"
                   value={deliveryRegionFilter}
                   onChange={(value) => setDeliveryRegionFilter(String(value))}
@@ -1106,9 +1156,11 @@ const OrdersPage = () => {
               </Box>
 
               <Box minWidth="220px">
+                <Typography variant="pi" textColor="neutral600">
+                  Дата доставки
+                </Typography>
                 <SingleSelect
                   aria-label="Фильтр по дате доставки"
-                  label="Дата доставки"
                   placeholder="Все даты"
                   value={deliveryDateFilter}
                   onChange={(value) => setDeliveryDateFilter(String(value))}
@@ -1123,9 +1175,11 @@ const OrdersPage = () => {
               </Box>
 
               <Box minWidth="220px">
+                <Typography variant="pi" textColor="neutral600">
+                  Интервал
+                </Typography>
                 <SingleSelect
                   aria-label="Фильтр по интервалу доставки"
-                  label="Интервал"
                   placeholder="Все интервалы"
                   value={deliveryTimeIntervalFilter}
                   onChange={(value) =>
@@ -1213,13 +1267,13 @@ const OrdersPage = () => {
                 <Tbody>
                   {filteredOrders.map((order) => {
                     const isSaving = savingDocumentId === order.documentId;
-                    const selectStyles =
-                      STATUS_SELECT_STYLES[order.orderStatus];
                     const rowBackground =
                       STATUS_ROW_BACKGROUNDS[order.orderStatus];
                     const isExpanded = expandedDocumentIds.includes(
                       order.documentId,
                     );
+                    const isDeliveryCostSaving =
+                      savingDeliveryCostDocumentId === order.documentId;
 
                     return (
                       <React.Fragment key={order.documentId ?? order.id}>
@@ -1230,12 +1284,16 @@ const OrdersPage = () => {
                               alignItems="flex-start"
                               gap={1}
                             >
-                              <Link
-                                as={RouterLink}
+                              <RouterLink
+                                style={{
+                                  color: "#4945ff",
+                                  fontWeight: 600,
+                                  textDecoration: "none",
+                                }}
                                 to={`${ORDER_EDIT_PATH}/${order.documentId}`}
                               >
                                 {order.orderNumber}
-                              </Link>
+                              </RouterLink>
                               <button
                                 type="button"
                                 onClick={() =>
@@ -1305,12 +1363,6 @@ const OrdersPage = () => {
                               disabled={isSaving}
                               loading={isSaving}
                               size="S"
-                              minWidth="220px"
-                              background={selectStyles.background}
-                              borderColor={selectStyles.borderColor}
-                              borderStyle="solid"
-                              borderWidth="1px"
-                              hasRadius
                               onChange={(value) =>
                                 void handleStatusChange(order.documentId, value)
                               }
@@ -1358,6 +1410,47 @@ const OrdersPage = () => {
                                 >
                                   Состав заказа
                                 </Typography>
+                                <Flex
+                                  justifyContent="flex-end"
+                                  alignItems="flex-start"
+                                  paddingTop={3}
+                                >
+                                  <Box width="220px">
+                                    <Typography
+                                      variant="pi"
+                                      textColor="neutral600"
+                                    >
+                                      Стоимость доставки, ₽
+                                    </Typography>
+                                    <TextInput
+                                      aria-label={`Стоимость доставки заказа ${order.orderNumber}`}
+                                      name={`deliveryCost-${order.documentId}`}
+                                      inputMode="decimal"
+                                      value={getDeliveryCostInputValue(order)}
+                                      disabled={isDeliveryCostSaving}
+                                      onChange={(
+                                        event: React.ChangeEvent<HTMLInputElement>,
+                                      ) =>
+                                        handleDeliveryCostInputChange(
+                                          order.documentId,
+                                          event.target.value,
+                                        )
+                                      }
+                                      onBlur={() =>
+                                        void handleDeliveryCostSave(
+                                          order.documentId,
+                                        )
+                                      }
+                                      onKeyDown={(
+                                        event: React.KeyboardEvent<HTMLInputElement>,
+                                      ) => {
+                                        if (event.key === "Enter") {
+                                          event.currentTarget.blur();
+                                        }
+                                      }}
+                                    />
+                                  </Box>
+                                </Flex>
                                 <Flex
                                   direction="column"
                                   alignItems="stretch"
@@ -1439,9 +1532,14 @@ const OrdersPage = () => {
                                             >
                                               {isCurrentWeightItem ? (
                                                 <Box width="160px">
+                                                  <Typography
+                                                    variant="pi"
+                                                    textColor="neutral600"
+                                                  >
+                                                    Фактический вес, кг
+                                                  </Typography>
                                                   <TextInput
                                                     aria-label={`Фактический вес позиции ${item.productName || index + 1}`}
-                                                    label="Факт. вес"
                                                     name={`actualWeight-${weightKey}`}
                                                     inputMode="decimal"
                                                     value={getActualWeightInputValue(
