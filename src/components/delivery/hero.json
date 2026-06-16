@@ -1,0 +1,37 @@
+{
+  "collectionName": "components_delivery_heroes",
+  "info": {
+    "displayName": "Delivery Hero",
+    "description": "Hero block for the delivery page"
+  },
+  "options": {},
+  "attributes": {
+    "kicker": {
+      "type": "string"
+    },
+    "title": {
+      "type": "text"
+    },
+    "text": {
+      "type": "richtext"
+    },
+    "primaryButtonText": {
+      "type": "string"
+    },
+    "primaryButtonLink": {
+      "type": "string"
+    },
+    "secondaryButtonText": {
+      "type": "string"
+    },
+    "secondaryButtonLink": {
+      "type": "string"
+    },
+    "noteTitle": {
+      "type": "string"
+    },
+    "noteText": {
+      "type": "richtext"
+    }
+  }
+}

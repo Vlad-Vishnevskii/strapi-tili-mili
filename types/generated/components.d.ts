@@ -1,5 +1,80 @@
 import type { Schema, Struct } from '@strapi/strapi';
 
+export interface DeliveryContactSection extends Struct.ComponentSchema {
+  collectionName: 'components_delivery_contact_sections';
+  info: {
+    description: 'Contact CTA section for the delivery page';
+    displayName: 'Delivery Contact Section';
+  };
+  attributes: {
+    fallbackEmail: Schema.Attribute.String;
+    fallbackPhone: Schema.Attribute.String;
+    kicker: Schema.Attribute.String;
+    text: Schema.Attribute.RichText;
+    title: Schema.Attribute.Text;
+    useSiteSettingsContacts: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<true>;
+  };
+}
+
+export interface DeliveryHero extends Struct.ComponentSchema {
+  collectionName: 'components_delivery_heroes';
+  info: {
+    description: 'Hero block for the delivery page';
+    displayName: 'Delivery Hero';
+  };
+  attributes: {
+    kicker: Schema.Attribute.String;
+    noteText: Schema.Attribute.RichText;
+    noteTitle: Schema.Attribute.String;
+    primaryButtonLink: Schema.Attribute.String;
+    primaryButtonText: Schema.Attribute.String;
+    secondaryButtonLink: Schema.Attribute.String;
+    secondaryButtonText: Schema.Attribute.String;
+    text: Schema.Attribute.RichText;
+    title: Schema.Attribute.Text;
+  };
+}
+
+export interface DeliveryImportantItem extends Struct.ComponentSchema {
+  collectionName: 'components_delivery_important_items';
+  info: {
+    description: 'Important note for the delivery page';
+    displayName: 'Delivery Important Item';
+  };
+  attributes: {
+    text: Schema.Attribute.RichText;
+  };
+}
+
+export interface DeliveryListSection extends Struct.ComponentSchema {
+  collectionName: 'components_delivery_list_sections';
+  info: {
+    description: 'List section for delivery page content';
+    displayName: 'Delivery List Section';
+  };
+  attributes: {
+    items: Schema.Attribute.Component<'shared.text-item', true>;
+    kicker: Schema.Attribute.String;
+    listType: Schema.Attribute.Enumeration<['ordered', 'unordered']> &
+      Schema.Attribute.DefaultTo<'unordered'>;
+    title: Schema.Attribute.String;
+  };
+}
+
+export interface DeliveryZone extends Struct.ComponentSchema {
+  collectionName: 'components_delivery_zones';
+  info: {
+    description: 'Text description of a delivery geography zone';
+    displayName: 'Delivery Zone';
+  };
+  attributes: {
+    description: Schema.Attribute.RichText;
+    details: Schema.Attribute.Component<'shared.text-item', true>;
+    title: Schema.Attribute.String;
+  };
+}
+
 export interface OrderOrderItem extends Struct.ComponentSchema {
   collectionName: 'components_order_order_items';
   info: {
@@ -120,13 +195,29 @@ export interface SharedHeroBanner extends Struct.ComponentSchema {
     displayName: 'Hero Banner';
   };
   attributes: {
+    accent: Schema.Attribute.String;
     buttonLink: Schema.Attribute.String;
+    buttons: Schema.Attribute.Component<'shared.hero-banner-button', true>;
     buttonText: Schema.Attribute.String;
-    image: Schema.Attribute.Media<'images'> & Schema.Attribute.Required;
+    image: Schema.Attribute.Media<'images'>;
     isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    meta: Schema.Attribute.JSON;
     mobileImage: Schema.Attribute.Media<'images'>;
     subtitle: Schema.Attribute.Text;
+    text: Schema.Attribute.Text;
     title: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
+export interface SharedHeroBannerButton extends Struct.ComponentSchema {
+  collectionName: 'components_shared_hero_banner_buttons';
+  info: {
+    description: 'Button for the home page hero banner';
+    displayName: 'Hero Banner Button';
+  };
+  attributes: {
+    link: Schema.Attribute.String & Schema.Attribute.Required;
+    text: Schema.Attribute.String & Schema.Attribute.Required;
   };
 }
 
@@ -179,18 +270,36 @@ export interface SharedSocialLink extends Struct.ComponentSchema {
   };
 }
 
+export interface SharedTextItem extends Struct.ComponentSchema {
+  collectionName: 'components_shared_text_items';
+  info: {
+    description: 'Reusable single text item';
+    displayName: 'Text Item';
+  };
+  attributes: {
+    text: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
 declare module '@strapi/strapi' {
   export module Public {
     export interface ComponentSchemas {
+      'delivery.contact-section': DeliveryContactSection;
+      'delivery.hero': DeliveryHero;
+      'delivery.important-item': DeliveryImportantItem;
+      'delivery.list-section': DeliveryListSection;
+      'delivery.zone': DeliveryZone;
       'order.order-item': OrderOrderItem;
       'shared.category-description': SharedCategoryDescription;
       'shared.contacts': SharedContacts;
       'shared.delivery-date-range': SharedDeliveryDateRange;
       'shared.delivery-time-interval': SharedDeliveryTimeInterval;
       'shared.hero-banner': SharedHeroBanner;
+      'shared.hero-banner-button': SharedHeroBannerButton;
       'shared.product-description-item': SharedProductDescriptionItem;
       'shared.seo': SharedSeo;
       'shared.social-link': SharedSocialLink;
+      'shared.text-item': SharedTextItem;
     }
   }
 }

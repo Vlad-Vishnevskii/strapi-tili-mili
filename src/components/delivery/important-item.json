@@ -1,0 +1,13 @@
+{
+  "collectionName": "components_delivery_important_items",
+  "info": {
+    "displayName": "Delivery Important Item",
+    "description": "Important note for the delivery page"
+  },
+  "options": {},
+  "attributes": {
+    "text": {
+      "type": "richtext"
+    }
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "kind": "singleType",
+  "collectionName": "delivery_pages",
+  "info": {
+    "singularName": "delivery-page",
+    "pluralName": "delivery-pages",
+    "displayName": "Delivery Page",
+    "description": "Delivery page content without map settings"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "seo": {
+      "type": "component",
+      "repeatable": false,
+      "component": "shared.seo"
+    },
+    "hero": {
+      "type": "component",
+      "repeatable": false,
+      "component": "delivery.hero"
+    },
+    "zonesSectionKicker": {
+      "type": "string"
+    },
+    "zonesSectionTitle": {
+      "type": "string"
+    },
+    "deliveryZones": {
+      "type": "component",
+      "repeatable": true,
+      "component": "delivery.zone"
+    },
+    "orderSection": {
+      "type": "component",
+      "repeatable": false,
+      "component": "delivery.list-section"
+    },
+    "paymentSection": {
+      "type": "component",
+      "repeatable": false,
+      "component": "delivery.list-section"
+    },
+    "importantSectionKicker": {
+      "type": "string"
+    },
+    "importantSectionTitle": {
+      "type": "string"
+    },
+    "importantItems": {
+      "type": "component",
+      "repeatable": true,
+      "component": "delivery.important-item"
+    },
+    "contactSection": {
+      "type": "component",
+      "repeatable": false,
+      "component": "delivery.contact-section"
+    }
+  }
+}

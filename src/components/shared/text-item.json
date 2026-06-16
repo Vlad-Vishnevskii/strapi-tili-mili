@@ -1,0 +1,14 @@
+{
+  "collectionName": "components_shared_text_items",
+  "info": {
+    "displayName": "Text Item",
+    "description": "Reusable single text item"
+  },
+  "options": {},
+  "attributes": {
+    "text": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

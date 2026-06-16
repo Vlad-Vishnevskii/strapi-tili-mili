@@ -1,0 +1,29 @@
+{
+  "collectionName": "components_delivery_contact_sections",
+  "info": {
+    "displayName": "Delivery Contact Section",
+    "description": "Contact CTA section for the delivery page"
+  },
+  "options": {},
+  "attributes": {
+    "kicker": {
+      "type": "string"
+    },
+    "title": {
+      "type": "text"
+    },
+    "text": {
+      "type": "richtext"
+    },
+    "useSiteSettingsContacts": {
+      "type": "boolean",
+      "default": true
+    },
+    "fallbackPhone": {
+      "type": "string"
+    },
+    "fallbackEmail": {
+      "type": "string"
+    }
+  }
+}

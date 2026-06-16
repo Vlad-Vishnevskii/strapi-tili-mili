@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_delivery_zones",
+  "info": {
+    "displayName": "Delivery Zone",
+    "description": "Text description of a delivery geography zone"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "richtext"
+    },
+    "details": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.text-item"
+    }
+  }
+}

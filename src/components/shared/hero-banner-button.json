@@ -1,0 +1,18 @@
+{
+  "collectionName": "components_shared_hero_banner_buttons",
+  "info": {
+    "displayName": "Hero Banner Button",
+    "description": "Button for the home page hero banner"
+  },
+  "options": {},
+  "attributes": {
+    "text": {
+      "type": "string",
+      "required": true
+    },
+    "link": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

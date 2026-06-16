@@ -509,6 +509,48 @@ export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiDeliveryPageDeliveryPage extends Struct.SingleTypeSchema {
+  collectionName: 'delivery_pages';
+  info: {
+    description: 'Delivery page content without map settings';
+    displayName: 'Delivery Page';
+    pluralName: 'delivery-pages';
+    singularName: 'delivery-page';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    contactSection: Schema.Attribute.Component<
+      'delivery.contact-section',
+      false
+    >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    deliveryZones: Schema.Attribute.Component<'delivery.zone', true>;
+    hero: Schema.Attribute.Component<'delivery.hero', false>;
+    importantItems: Schema.Attribute.Component<'delivery.important-item', true>;
+    importantSectionKicker: Schema.Attribute.String;
+    importantSectionTitle: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::delivery-page.delivery-page'
+    > &
+      Schema.Attribute.Private;
+    orderSection: Schema.Attribute.Component<'delivery.list-section', false>;
+    paymentSection: Schema.Attribute.Component<'delivery.list-section', false>;
+    publishedAt: Schema.Attribute.DateTime;
+    seo: Schema.Attribute.Component<'shared.seo', false>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    zonesSectionKicker: Schema.Attribute.String;
+    zonesSectionTitle: Schema.Attribute.String;
+  };
+}
+
 export interface ApiHomePageHomePage extends Struct.SingleTypeSchema {
   collectionName: 'home_pages';
   info: {
@@ -1304,6 +1346,7 @@ declare module '@strapi/strapi' {
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
       'api::category.category': ApiCategoryCategory;
+      'api::delivery-page.delivery-page': ApiDeliveryPageDeliveryPage;
       'api::home-page.home-page': ApiHomePageHomePage;
       'api::order.order': ApiOrderOrder;
       'api::product.product': ApiProductProduct;

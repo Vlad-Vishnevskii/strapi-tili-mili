@@ -1,0 +1,29 @@
+{
+  "collectionName": "components_delivery_list_sections",
+  "info": {
+    "displayName": "Delivery List Section",
+    "description": "List section for delivery page content"
+  },
+  "options": {},
+  "attributes": {
+    "kicker": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "items": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.text-item"
+    },
+    "listType": {
+      "type": "enumeration",
+      "enum": [
+        "ordered",
+        "unordered"
+      ],
+      "default": "unordered"
+    }
+  }
+}
