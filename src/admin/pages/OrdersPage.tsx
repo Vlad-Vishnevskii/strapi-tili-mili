@@ -19,7 +19,7 @@ import {
 import { File as FileIcon } from "@strapi/icons";
 import { Link as RouterLink } from "react-router-dom";
 
-type OrderStatus = "new" | "delivering" | "done";
+type OrderStatus = "new" | "delivering" | "done" | "cancelled";
 
 type OrderItem = {
   id?: number;
@@ -72,20 +72,21 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   new: "Новый",
   delivering: "Отгружается",
   done: "Завершен",
+  cancelled: "Отменён",
 };
 
-const STATUS_OPTIONS: OrderStatus[] = ["new", "delivering", "done"];
+const STATUS_OPTIONS: OrderStatus[] = ["new", "delivering", "done", "cancelled"];
 
 const LEGACY_ORDER_STATUS_MAP: Record<string, OrderStatus> = {
   confirmed: "delivering",
   packed: "delivering",
-  cancelled: "done",
 };
 
 const STATUS_ROW_BACKGROUNDS: Record<OrderStatus, string> = {
   new: "warning100",
   delivering: "alternative100",
   done: "success100",
+  cancelled: "danger100",
 };
 
 const ORDERS_ENDPOINT =
