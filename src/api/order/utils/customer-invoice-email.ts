@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import nodemailer from "nodemailer";
 
 export type InvoiceOrderItem = {
   productName?: string | null;
@@ -31,32 +31,35 @@ export type InvoiceOrder = {
   items?: InvoiceOrderItem[];
 };
 
-type InvoiceEmailReason = 'created' | 'delivering';
+type InvoiceEmailReason = "created" | "delivering";
 
 const SMTP_PORT = toNumericValue(process.env.SMTP_PORT) ?? 465;
 const SMTP_SECURE = process.env.SMTP_SECURE
-  ? process.env.SMTP_SECURE.toLowerCase() === 'true'
+  ? process.env.SMTP_SECURE.toLowerCase() === "true"
   : SMTP_PORT === 465;
-const SMTP_CONNECTION_TIMEOUT = toNumericValue(process.env.SMTP_CONNECTION_TIMEOUT) ?? 5000;
-const SMTP_GREETING_TIMEOUT = toNumericValue(process.env.SMTP_GREETING_TIMEOUT) ?? 5000;
-const SMTP_SOCKET_TIMEOUT = toNumericValue(process.env.SMTP_SOCKET_TIMEOUT) ?? 10000;
+const SMTP_CONNECTION_TIMEOUT =
+  toNumericValue(process.env.SMTP_CONNECTION_TIMEOUT) ?? 5000;
+const SMTP_GREETING_TIMEOUT =
+  toNumericValue(process.env.SMTP_GREETING_TIMEOUT) ?? 5000;
+const SMTP_SOCKET_TIMEOUT =
+  toNumericValue(process.env.SMTP_SOCKET_TIMEOUT) ?? 10000;
 
-const priceFormatter = new Intl.NumberFormat('ru-RU', {
-  style: 'currency',
-  currency: 'RUB',
+const priceFormatter = new Intl.NumberFormat("ru-RU", {
+  style: "currency",
+  currency: "RUB",
   maximumFractionDigits: 0,
 });
 
-const weightFormatter = new Intl.NumberFormat('ru-RU', {
+const weightFormatter = new Intl.NumberFormat("ru-RU", {
   maximumFractionDigits: 3,
 });
 
-const dateFormatter = new Intl.DateTimeFormat('ru-RU', {
-  day: '2-digit',
-  month: '2-digit',
-  year: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit',
+const dateFormatter = new Intl.DateTimeFormat("ru-RU", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
 });
 
 function isCustomerInvoiceEmailEnabled() {
@@ -64,17 +67,17 @@ function isCustomerInvoiceEmailEnabled() {
     process.env.SMTP_HOST?.trim() &&
       process.env.SMTP_USER?.trim() &&
       process.env.SMTP_PASS?.trim() &&
-      process.env.SMTP_FROM?.trim()
+      process.env.SMTP_FROM?.trim(),
   );
 }
 
 function toNumericValue(value: unknown) {
-  if (typeof value === 'number') {
+  if (typeof value === "number") {
     return Number.isFinite(value) ? value : null;
   }
 
-  if (typeof value === 'string') {
-    const normalizedValue = value.trim().replace(',', '.');
+  if (typeof value === "string") {
+    const normalizedValue = value.trim().replace(",", ".");
 
     if (!normalizedValue) {
       return null;
@@ -106,7 +109,7 @@ function formatWeight(value: number | string | null | undefined) {
   const numericValue = toNumericValue(value);
 
   if (numericValue === null) {
-    return '0';
+    return "0";
   }
 
   return weightFormatter.format(numericValue);
@@ -124,25 +127,25 @@ function formatDate(value: Date | string) {
 
 function formatComment(value: string | null | undefined) {
   if (!value || !value.trim()) {
-    return '—';
+    return "—";
   }
 
   return value.trim();
 }
 
 function escapeHtml(value: unknown) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 function isWeightUnitName(unitName: string | null | undefined) {
   const normalizedUnitName = unitName?.trim().toLowerCase();
 
-  return normalizedUnitName === 'кг' || normalizedUnitName === 'kg';
+  return normalizedUnitName === "кг" || normalizedUnitName === "kg";
 }
 
 function getOrderedWeight(item: InvoiceOrderItem) {
@@ -154,12 +157,13 @@ function getOrderedWeight(item: InvoiceOrderItem) {
 
 function getPrintableItemMeasure(item: InvoiceOrderItem) {
   return isWeightUnitName(item.unitName)
-    ? toNumericValue(item.actualWeight ?? item.itemWeight) ?? getOrderedWeight(item)
+    ? (toNumericValue(item.actualWeight ?? item.itemWeight) ??
+        getOrderedWeight(item))
     : getOrderedWeight(item);
 }
 
 function getItemMeasureLabel(item: InvoiceOrderItem) {
-  return isWeightUnitName(item.unitName) ? 'Факт. вес' : 'Факт. кол-во';
+  return isWeightUnitName(item.unitName) ? "Факт. вес" : "Факт. кол-во";
 }
 
 function getPricedItemMeasure(item: InvoiceOrderItem) {
@@ -203,13 +207,13 @@ export function buildCustomerInvoiceHtml(order: InvoiceOrder) {
           <td class="cell muted" style="border:1px solid #d1d5db;padding:8px 6px;vertical-align:top;color:#6b7280;">${index + 1}</td>
           <td class="cell name" style="border:1px solid #d1d5db;padding:8px 6px;vertical-align:top;font-weight:600;width:30%;">${escapeHtml(item.productName || `Позиция ${index + 1}`)}</td>
           <td class="cell numeric" style="border:1px solid #d1d5db;padding:8px 6px;vertical-align:top;text-align:right;white-space:nowrap;">${escapeHtml(quantity)}</td>
-          <td class="cell numeric" style="border:1px solid #d1d5db;padding:8px 6px;vertical-align:top;text-align:right;white-space:nowrap;">${escapeHtml(getItemMeasureLabel(item))}: ${escapeHtml(formatWeight(actualMeasure))} ${escapeHtml(item.unitName ?? '')}</td>
-          <td class="cell numeric" style="border:1px solid #d1d5db;padding:8px 6px;vertical-align:top;text-align:right;white-space:nowrap;">${escapeHtml(unitPrice === null ? '—' : formatPrice(unitPrice))}</td>
+          <td class="cell numeric" style="border:1px solid #d1d5db;padding:8px 6px;vertical-align:top;text-align:right;white-space:nowrap;">${escapeHtml(getItemMeasureLabel(item))}: ${escapeHtml(formatWeight(actualMeasure))} ${escapeHtml(item.unitName ?? "")}</td>
+          <td class="cell numeric" style="border:1px solid #d1d5db;padding:8px 6px;vertical-align:top;text-align:right;white-space:nowrap;">${escapeHtml(unitPrice === null ? "—" : formatPrice(unitPrice))}</td>
           <td class="cell numeric total" style="border:1px solid #d1d5db;padding:8px 6px;vertical-align:top;text-align:right;white-space:nowrap;font-weight:700;">${escapeHtml(formatPrice(item.itemTotal ?? 0))}</td>
         </tr>
       `;
     })
-    .join('');
+    .join("");
 
   return `<!doctype html>
 <html lang="ru">
@@ -412,42 +416,45 @@ export function buildCustomerInvoiceHtml(order: InvoiceOrder) {
 </html>`;
 }
 
-function buildCustomerInvoiceText(order: InvoiceOrder, reason: InvoiceEmailReason) {
+function buildCustomerInvoiceText(
+  order: InvoiceOrder,
+  reason: InvoiceEmailReason,
+) {
   const totalPrice = toNumericValue(order.totalPrice) ?? 0;
   const deliveryCost = toNumericValue(order.deliveryCost) ?? 0;
   const totalWithDelivery = roundDecimal(totalPrice + deliveryCost);
   const statusLine =
-    reason === 'delivering'
+    reason === "delivering"
       ? 'Ваш заказ переведен в статус "Отгружается".'
-      : 'Ваш заказ принят в работу.';
+      : "Ваш заказ принят в работу.";
 
   return [
     statusLine,
-    '',
+    "",
     `Накладная к заказу ${order.orderNumber}`,
     `Получатель: ${order.customerName}`,
     `Телефон: ${order.customerPhone}`,
     `Адрес доставки: ${formatComment(order.deliveryAddress)}`,
     `Дата доставки: ${formatComment(order.deliveryDate)}`,
     `Интервал доставки: ${formatComment(order.deliveryTimeInterval)}`,
-    '',
+    "",
     `Итого: ${formatPrice(order.totalPrice)}`,
     `Стоимость доставки: ${formatPrice(order.deliveryCost ?? 0)}`,
     `Итого с учетом доставки: ${formatPrice(totalWithDelivery)}`,
-  ].join('\n');
+  ].join("\n");
 }
 
 function getInvoiceSubject(order: InvoiceOrder, reason: InvoiceEmailReason) {
-  if (reason === 'delivering') {
-    return `Заказ ${order.orderNumber} отгружается`;
+  if (reason === "delivering") {
+    return `Заказ от TiliMili ${order.orderNumber} отгружается`;
   }
 
-  return `Накладная к заказу ${order.orderNumber}`;
+  return `Накладная к заказу TiliMili ${order.orderNumber}`;
 }
 
 export async function sendCustomerInvoiceEmail(
   order: InvoiceOrder,
-  reason: InvoiceEmailReason = 'created'
+  reason: InvoiceEmailReason = "created",
 ) {
   const customerEmail = order.customerEmail?.trim();
 

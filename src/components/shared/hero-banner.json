@@ -41,12 +41,6 @@
         "images"
       ]
     },
-    "buttonText": {
-      "type": "string"
-    },
-    "buttonLink": {
-      "type": "string"
-    },
     "isActive": {
       "type": "boolean",
       "default": true

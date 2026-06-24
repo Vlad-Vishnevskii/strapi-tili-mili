@@ -196,9 +196,7 @@ export interface SharedHeroBanner extends Struct.ComponentSchema {
   };
   attributes: {
     accent: Schema.Attribute.String;
-    buttonLink: Schema.Attribute.String;
     buttons: Schema.Attribute.Component<'shared.hero-banner-button', true>;
-    buttonText: Schema.Attribute.String;
     image: Schema.Attribute.Media<'images'>;
     isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
     meta: Schema.Attribute.JSON;
