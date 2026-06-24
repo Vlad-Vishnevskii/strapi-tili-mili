@@ -1,6 +1,7 @@
 import { factories } from '@strapi/strapi';
 import { errors } from '@strapi/utils';
 import nodemailer from 'nodemailer';
+import { sendCustomerInvoiceEmail } from '../utils/customer-invoice-email';
 
 type RawPayload = {
   customerName?: unknown;
@@ -516,6 +517,28 @@ export default factories.createCoreService('api::order.order' as any, ({ strapi 
       })),
     }).catch((error) => {
       strapi.log.error(`Failed to send order notification for ${orderNumber}`, error);
+    });
+
+    void sendCustomerInvoiceEmail({
+      id: orderId,
+      orderNumber,
+      customerName: payload.customerName,
+      customerPhone: payload.customerPhone,
+      customerEmail: payload.customerEmail,
+      deliveryAddress: payload.deliveryAddress,
+      deliveryRegion: payload.deliveryRegion,
+      deliveryRegionCode: payload.deliveryRegionCode,
+      deliveryDate: payload.deliveryDate,
+      deliveryTimeInterval: payload.deliveryTimeInterval,
+      deliveryCost: 0,
+      comment: payload.comment,
+      totalItems,
+      totalWeight: roundedTotalWeight,
+      totalPrice: roundedTotalPrice,
+      submittedAt,
+      items: orderItems,
+    }).catch((error) => {
+      strapi.log.error(`Failed to send customer invoice for ${orderNumber}`, error);
     });
 
     return {
