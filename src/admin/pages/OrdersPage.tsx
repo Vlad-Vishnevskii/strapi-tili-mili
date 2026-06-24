@@ -223,10 +223,14 @@ const getItemMeasureLabel = (item: OrderItem) =>
 
 const buildInvoiceHtml = (order: OrderEntry) => {
   const items = order.items ?? [];
+  const totalPrice = toNumericValue(order.totalPrice) ?? 0;
+  const deliveryCost = toNumericValue(order.deliveryCost) ?? 0;
+  const totalWithDelivery = roundDecimal(totalPrice + deliveryCost);
   const rows = items
     .map((item, index) => {
       const quantity = toNumericValue(item.quantity) ?? 0;
       const actualMeasure = getPrintableItemMeasure(item);
+      const unitPrice = getItemUnitPrice(item);
 
       return `
         <tr>
@@ -234,6 +238,7 @@ const buildInvoiceHtml = (order: OrderEntry) => {
           <td class="cell name">${escapeHtml(item.productName || `Позиция ${index + 1}`)}</td>
           <td class="cell numeric">${escapeHtml(quantity)}</td>
           <td class="cell numeric">${escapeHtml(getItemMeasureLabel(item))}: ${escapeHtml(formatWeight(actualMeasure))} ${escapeHtml(item.unitName ?? "")}</td>
+          <td class="cell numeric">${escapeHtml(unitPrice === null ? "—" : formatPrice(unitPrice))}</td>
           <td class="cell numeric total">${escapeHtml(formatPrice(item.itemTotal ?? 0))}</td>
         </tr>
       `;
@@ -446,13 +451,14 @@ const buildInvoiceHtml = (order: OrderEntry) => {
               <th>Товар</th>
               <th>Кол-во</th>
               <th>Факт.</th>
+              <th>Цена за 1 кг/шт</th>
               <th>Сумма</th>
             </tr>
           </thead>
           <tbody>
             ${
               rows ||
-              `<tr><td class="cell" colspan="5">Позиции заказа не найдены.</td></tr>`
+              `<tr><td class="cell" colspan="6">Позиции заказа не найдены.</td></tr>`
             }
           </tbody>
         </table>
@@ -476,6 +482,10 @@ const buildInvoiceHtml = (order: OrderEntry) => {
             <tr>
               <td>Стоимость доставки</td>
               <td>${escapeHtml(formatPrice(order.deliveryCost ?? 0))}</td>
+            </tr>
+            <tr>
+              <td>Итого с учетом доставки</td>
+              <td>${escapeHtml(formatPrice(totalWithDelivery))}</td>
             </tr>
           </tbody>
         </table>
