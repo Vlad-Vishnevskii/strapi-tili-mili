@@ -58,6 +58,7 @@ type Product = {
   documentId?: string;
   name: string;
   slug: string;
+  unitValue?: number | string | null;
   category?: Relation;
 };
 
@@ -82,8 +83,9 @@ type ReportRow = {
   category: string;
   unit: string;
   measure: number;
+  packages: number;
   cost: number;
-  orders: Array<{ number: string; measure: number }>;
+  orders: Array<{ number: string; measure: number; packages: number }>;
 };
 
 type Report = {
@@ -135,6 +137,29 @@ const toNumber = (value: unknown) => {
 
 const isWeightUnit = (unit: string | null | undefined) =>
   unit?.trim().toLowerCase() === "кг" || unit?.trim().toLowerCase() === "kg";
+
+const getItemUnitValue = (item: OrderItem, product?: Product) => {
+  const snapshotUnitValue = toNumber(item.productSnapshot?.unitValue);
+  if (snapshotUnitValue > 0) return snapshotUnitValue;
+
+  const productUnitValue = toNumber(product?.unitValue);
+  if (productUnitValue > 0) return productUnitValue;
+
+  return 0;
+};
+
+const getPackageCount = (item: OrderItem, product?: Product) => {
+  const unitValue = getItemUnitValue(item, product);
+  const orderedMeasure = isWeightUnit(item.unitName)
+    ? toNumber(item.itemWeight)
+    : toNumber(item.quantity);
+
+  if (unitValue <= 0 || orderedMeasure <= 0) {
+    return toNumber(item.quantity);
+  }
+
+  return Math.round(orderedMeasure / unitValue);
+};
 
 const startOfDay = (date: Date) => {
   const result = new Date(date);
@@ -312,6 +337,7 @@ const OrdersReportPage = () => {
         const measure = isWeightUnit(item.unitName)
           ? toNumber(item.actualWeight ?? item.itemWeight)
           : toNumber(item.quantity);
+        const packages = getPackageCount(item, product);
         const key =
           item.productSlug ||
           product?.slug ||
@@ -323,12 +349,14 @@ const OrdersReportPage = () => {
           category,
           unit,
           measure: 0,
+          packages: 0,
           cost: 0,
           orders: [],
         };
         current.measure += measure;
+        current.packages += packages;
         current.cost += toNumber(item.itemTotal);
-        current.orders.push({ number: order.orderNumber, measure });
+        current.orders.push({ number: order.orderNumber, measure, packages });
         grouped.set(key, current);
       });
       if (hasIncludedItems) orderCount += 1;
@@ -391,7 +419,8 @@ const OrdersReportPage = () => {
         (row, index) => `<tr>
       <td>${index + 1}</td><td>${escapeHtml(row.name)}</td>
       <td class="num">${escapeHtml(numberFormatter.format(row.measure))} ${escapeHtml(row.unit)}</td>
-      <td>${row.orders.map((entry) => `${escapeHtml(entry.number)} — ${escapeHtml(numberFormatter.format(entry.measure))} ${escapeHtml(row.unit)}`).join("<br>")}</td>
+      <td class="num">${escapeHtml(numberFormatter.format(row.packages))}</td>
+      <td>${row.orders.map((entry) => `${escapeHtml(entry.number)} — ${escapeHtml(numberFormatter.format(entry.measure))} ${escapeHtml(row.unit)} / ${escapeHtml(numberFormatter.format(entry.packages))} упак.`).join("<br>")}</td>
       <td class="num">${escapeHtml(moneyFormatter.format(row.cost))}</td><td>${escapeHtml(row.category)}</td>
     </tr>`,
       )
@@ -403,9 +432,9 @@ const OrdersReportPage = () => {
       Период: ${escapeHtml(report.periodLabel)}<br>Статусы: ${escapeHtml(report.statusesLabel)}<br>
       Категории: ${escapeHtml(report.categoriesLabel)}<br>Города: ${escapeHtml(report.citiesLabel)}<br>
       Заказов: ${report.orderCount}. Сформирован: ${escapeHtml(report.createdAt.toLocaleString("ru-RU"))}
-    </div><table><thead><tr><th>№</th><th>Наименование товара</th><th>Количество / вес</th><th>В заказах</th><th>Стоимость</th><th>Категория</th></tr></thead>
-    <tbody>${rows || '<tr><td class="empty" colspan="6">По выбранным условиям данных нет</td></tr>'}</tbody>
-    <tfoot><tr><td colspan="4">Итого</td><td class="num">${escapeHtml(moneyFormatter.format(report.totalCost))}</td><td>${report.rows.length} поз.</td></tr></tfoot></table>
+    </div><table><thead><tr><th>№</th><th>Наименование товара</th><th>Количество / вес</th><th>Упаковок</th><th>В заказах</th><th>Стоимость</th><th>Категория</th></tr></thead>
+    <tbody>${rows || '<tr><td class="empty" colspan="7">По выбранным условиям данных нет</td></tr>'}</tbody>
+    <tfoot><tr><td colspan="5">Итого</td><td class="num">${escapeHtml(moneyFormatter.format(report.totalCost))}</td><td>${report.rows.length} поз.</td></tr></tfoot></table>
     <script>window.addEventListener('load',()=>{window.print();});<\/script></body></html>`);
     printWindow.document.close();
   }, [report, toggleNotification]);
@@ -608,7 +637,7 @@ const OrdersReportPage = () => {
                 </Typography>
               </Flex>
               <Box overflow="auto">
-                <Table colCount={6} rowCount={report.rows.length}>
+                <Table colCount={7} rowCount={report.rows.length}>
                   <Thead>
                     <Tr>
                       <Th>
@@ -623,6 +652,9 @@ const OrdersReportPage = () => {
                         <Typography variant="sigma">
                           Количество / вес
                         </Typography>
+                      </Th>
+                      <Th>
+                        <Typography variant="sigma">Упаковок</Typography>
                       </Th>
                       <Th>
                         <Typography variant="sigma">В заказах</Typography>
@@ -651,12 +683,19 @@ const OrdersReportPage = () => {
                             </Typography>
                           </Td>
                           <Td>
+                            <Typography variant="omega" fontWeight="semiBold">
+                              {numberFormatter.format(row.packages)}
+                            </Typography>
+                          </Td>
+                          <Td>
                             {row.orders.map((entry) => (
                               <div key={`${row.key}-${entry.number}`}>
                                 <Typography variant="pi">
                                   {entry.number} —{" "}
                                   {numberFormatter.format(entry.measure)}{" "}
-                                  {row.unit}
+                                  {row.unit} /{" "}
+                                  {numberFormatter.format(entry.packages)}{" "}
+                                  упак.
                                 </Typography>
                               </div>
                             ))}
@@ -673,7 +712,7 @@ const OrdersReportPage = () => {
                       ))
                     ) : (
                       <Tr>
-                        <Td colSpan={6}>
+                        <Td colSpan={7}>
                           <Box padding={6} textAlign="center">
                             <Typography textColor="neutral600">
                               По выбранным условиям данных нет.
