@@ -560,6 +560,9 @@ const getActualWeightInputValue = (item: OrderItem) =>
     item.actualWeight ?? item.itemWeight ?? getOrderedWeight(item),
   );
 
+const getQuantityInputValue = (item: OrderItem) =>
+  formatInputValue(item.quantity ?? 0);
+
 const getDeliveryCostInputValue = (order: OrderEntry) =>
   formatInputValue(order.deliveryCost ?? 0);
 
@@ -667,6 +670,9 @@ const OrdersPage = () => {
   const [savingWeightKey, setSavingWeightKey] = React.useState<string | null>(
     null,
   );
+  const [savingQuantityKey, setSavingQuantityKey] = React.useState<
+    string | null
+  >(null);
   const [savingDeliveryCostDocumentId, setSavingDeliveryCostDocumentId] =
     React.useState<string | null>(null);
   const [expandedDocumentIds, setExpandedDocumentIds] = React.useState<
@@ -870,6 +876,126 @@ const OrdersPage = () => {
       }
     },
     [orders, put, savingWeightKey, toggleNotification],
+  );
+
+  const handleQuantityInputChange = React.useCallback(
+    (documentId: string, itemIndex: number, value: string) => {
+      setOrders((currentOrders) =>
+        currentOrders.map((order) =>
+          order.documentId === documentId
+            ? {
+                ...order,
+                items: (order.items ?? []).map((item, index) =>
+                  index === itemIndex ? { ...item, quantity: value } : item,
+                ),
+              }
+            : order,
+        ),
+      );
+    },
+    [],
+  );
+
+  const handleQuantitySave = React.useCallback(
+    async (documentId: string, itemIndex: number) => {
+      const currentOrder = orders.find(
+        (order) => order.documentId === documentId,
+      );
+      const currentItem = currentOrder?.items?.[itemIndex];
+
+      if (!currentOrder || !currentItem || !currentOrder.items) {
+        return;
+      }
+
+      if (isWeightItem(currentItem)) {
+        return;
+      }
+
+      const quantityKey = `${documentId}-${currentItem.id ?? itemIndex}`;
+
+      if (savingQuantityKey === quantityKey) {
+        return;
+      }
+
+      const quantity = toNumericValue(currentItem.quantity);
+
+      if (quantity === null || !Number.isInteger(quantity) || quantity <= 0) {
+        toggleNotification({
+          type: "danger",
+          message: "Введите целое количество больше 0.",
+        });
+        return;
+      }
+
+      const unitPrice = getItemUnitPrice(currentItem);
+
+      if (unitPrice === null || unitPrice <= 0) {
+        toggleNotification({
+          type: "danger",
+          message: "Не удалось рассчитать цену позиции.",
+        });
+        return;
+      }
+
+      const itemWeight = roundDecimal(
+        (toNumericValue(currentItem.packageWeight) ?? 0) * quantity,
+        3,
+      );
+      const nextItems = currentOrder.items.map((item, index) =>
+        index === itemIndex
+          ? {
+              ...item,
+              unitPrice: roundDecimal(unitPrice),
+              quantity,
+              itemWeight,
+              actualWeight: null,
+              itemTotal: roundDecimal(unitPrice * quantity),
+            }
+          : item,
+      );
+      const nextOrder = recalculateOrder(currentOrder, nextItems);
+
+      setSavingQuantityKey(quantityKey);
+      setOrders((currentOrders) =>
+        currentOrders.map((order) =>
+          order.documentId === documentId ? nextOrder : order,
+        ),
+      );
+
+      try {
+        await put(
+          `/content-manager/collection-types/api::order.order/${documentId}`,
+          {
+            items: buildOrderItemsPayload(nextItems),
+            totalItems: nextOrder.totalItems,
+            totalWeight: nextOrder.totalWeight,
+            totalPrice: nextOrder.totalPrice,
+            amountLeftForFreeDelivery: nextOrder.amountLeftForFreeDelivery,
+          },
+        );
+
+        toggleNotification({
+          type: "success",
+          message: `Количество и сумма заказа ${currentOrder.orderNumber} обновлены.`,
+        });
+      } catch {
+        setOrders((currentOrders) =>
+          currentOrders.map((order) =>
+            order.documentId === documentId ? currentOrder : order,
+          ),
+        );
+
+        toggleNotification({
+          type: "danger",
+          message: "Не удалось сохранить количество позиции.",
+        });
+      } finally {
+        setSavingQuantityKey((currentKey) =>
+          currentKey === quantityKey ? null : currentKey,
+        );
+      }
+    },
+    [orders, put, savingQuantityKey, toggleNotification],
   );
 
   const handleDeliveryCostInputChange = React.useCallback(
@@ -1476,12 +1602,15 @@ const OrdersPage = () => {
                                       const weightKey = `${order.documentId}-${
                                         item.id ?? index
                                       }`;
+                                      const quantityKey = `${
+                                        order.documentId
+                                      }-${item.id ?? index}`;
                                       const isWeightSaving =
                                         savingWeightKey === weightKey;
+                                      const isQuantitySaving =
+                                        savingQuantityKey === quantityKey;
                                       const isCurrentWeightItem =
                                         isWeightItem(item);
-                                      const printableMeasure =
-                                        getPrintableItemMeasure(item);
 
                                       return (
                                         <Box
@@ -1582,22 +1711,44 @@ const OrdersPage = () => {
                                                   />
                                                 </Box>
                                               ) : (
-                                                <Box minWidth="160px">
+                                                <Box width="160px">
                                                   <Typography
                                                     variant="pi"
                                                     textColor="neutral600"
                                                   >
                                                     Факт. кол-во
                                                   </Typography>
-                                                  <Typography
-                                                    fontWeight="bold"
-                                                    textColor="neutral800"
-                                                  >
-                                                    {formatWeight(
-                                                      printableMeasure,
-                                                    )}{" "}
-                                                    {item.unitName ?? ""}
-                                                  </Typography>
+                                                  <TextInput
+                                                    aria-label={`Количество позиции ${item.productName || index + 1}`}
+                                                    name={`quantity-${quantityKey}`}
+                                                    inputMode="numeric"
+                                                    value={getQuantityInputValue(
+                                                      item,
+                                                    )}
+                                                    disabled={isQuantitySaving}
+                                                    onChange={(
+                                                      event: React.ChangeEvent<HTMLInputElement>,
+                                                    ) =>
+                                                      handleQuantityInputChange(
+                                                        order.documentId,
+                                                        index,
+                                                        event.target.value,
+                                                      )
+                                                    }
+                                                    onBlur={() =>
+                                                      void handleQuantitySave(
+                                                        order.documentId,
+                                                        index,
+                                                      )
+                                                    }
+                                                    onKeyDown={(
+                                                      event: React.KeyboardEvent<HTMLInputElement>,
+                                                    ) => {
+                                                      if (event.key === "Enter") {
+                                                        event.currentTarget.blur();
+                                                      }
+                                                    }}
+                                                  />
                                                 </Box>
                                               )}
 
