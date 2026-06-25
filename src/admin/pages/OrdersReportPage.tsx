@@ -138,27 +138,8 @@ const toNumber = (value: unknown) => {
 const isWeightUnit = (unit: string | null | undefined) =>
   unit?.trim().toLowerCase() === "кг" || unit?.trim().toLowerCase() === "kg";
 
-const getItemUnitValue = (item: OrderItem, product?: Product) => {
-  const snapshotUnitValue = toNumber(item.productSnapshot?.unitValue);
-  if (snapshotUnitValue > 0) return snapshotUnitValue;
-
-  const productUnitValue = toNumber(product?.unitValue);
-  if (productUnitValue > 0) return productUnitValue;
-
-  return 0;
-};
-
-const getPackageCount = (item: OrderItem, product?: Product) => {
-  const unitValue = getItemUnitValue(item, product);
-  const orderedMeasure = isWeightUnit(item.unitName)
-    ? toNumber(item.itemWeight)
-    : toNumber(item.quantity);
-
-  if (unitValue <= 0 || orderedMeasure <= 0) {
-    return toNumber(item.quantity);
-  }
-
-  return Math.round(orderedMeasure / unitValue);
+const getPackageCount = (item: OrderItem) => {
+  return toNumber(item.quantity);
 };
 
 const startOfDay = (date: Date) => {
@@ -337,7 +318,7 @@ const OrdersReportPage = () => {
         const measure = isWeightUnit(item.unitName)
           ? toNumber(item.actualWeight ?? item.itemWeight)
           : toNumber(item.quantity);
-        const packages = getPackageCount(item, product);
+        const packages = getPackageCount(item);
         const key =
           item.productSlug ||
           product?.slug ||
