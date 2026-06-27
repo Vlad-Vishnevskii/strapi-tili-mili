@@ -66,6 +66,40 @@ const haveSameIds = (left: EntityId[], right: EntityId[]) => {
   return [...leftIds].every((id) => rightIds.has(id));
 };
 
+const seededContentTypes = [
+  'api::category.category',
+  'api::subcategory.subcategory',
+  'api::product.product',
+  'api::delivery-page.delivery-page',
+];
+
+const hasEntityResult = (result: unknown) => {
+  if (Array.isArray(result)) {
+    return result.length > 0;
+  }
+
+  if (!result || typeof result !== 'object') {
+    return Boolean(result);
+  }
+
+  return 'id' in result || 'documentId' in result;
+};
+
+async function hasSeededContent(strapi: Core.Strapi) {
+  for (const uid of seededContentTypes) {
+    const existingEntity = await strapi.entityService.findMany(uid as any, {
+      publicationState: 'preview',
+      limit: 1,
+    } as any);
+
+    if (hasEntityResult(existingEntity)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 const categorySeeds = [
   {
     name: 'Птица/Мясо',
@@ -433,6 +467,11 @@ export default {
 
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {
     await migrateOrderStatuses(strapi);
+
+    if (await hasSeededContent(strapi)) {
+      strapi.log.info('Initial seed skipped: content already exists.');
+      return;
+    }
 
     const categoryIdBySlug = new Map<string, EntityId>();
     const subcategoryIdBySlug = new Map<string, EntityId>();
